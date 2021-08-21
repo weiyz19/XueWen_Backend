@@ -15,7 +15,7 @@ import javax.validation.constraints.NotEmpty;
 
 @Entity // This tells Hibernate to make a table out of this class
 @Table(name = "userlist")
-public class User {
+public class MyUser {
   @Id		/** key in table */
   @GeneratedValue(strategy=GenerationType.IDENTITY)
   private Integer id;

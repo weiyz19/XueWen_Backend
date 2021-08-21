@@ -5,13 +5,17 @@
  */
 package com.example.test_mysql.domain;
 
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
-import com.example.test_mysql.domain.User;
+import com.example.test_mysql.domain.MyUser;
 
 // This will be AUTO IMPLEMENTED by Spring into a Bean called userRepository
 // CRUD refers Create, Read, Update, Delete
 
-public interface UserRepo extends CrudRepository<User, Integer> {
-
+public interface UserRepo extends CrudRepository<MyUser, Integer> {
+	
+	@Query("select t from MyUser t where t.username = :username")
+    MyUser findByUserName(@Param("username") String username);
 }
