@@ -1,7 +1,7 @@
 /**
  * weiyz19
- * UserRepo.java
- * 2021-08-17
+ * UserTokenRepo.java
+ * 2021-08-24
  */
 package com.example.test_mysql.domain;
 
@@ -12,8 +12,8 @@ import org.springframework.data.repository.query.Param;
 // This will be AUTO IMPLEMENTED by Spring into a Bean called userRepository
 // CRUD refers Create, Read, Update, Delete
 
-public interface UserRepo extends CrudRepository<MyUser, Integer> {
+public interface UserTokenRepo extends CrudRepository<UserToken, Integer> {
 	
-	@Query("select t from MyUser t where t.username = :username")
+	@Query("select t from UserToken t where t.username = :username")
     MyUser findByUserName(@Param("username") String username);
 }
