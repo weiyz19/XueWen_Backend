@@ -15,7 +15,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
 import com.example.test_mysql.domain.MyUser;
+import com.example.test_mysql.domain.UserFavorRepoImpl;
 import com.example.test_mysql.domain.UserRepo;
+
+import net.sf.json.JSONObject;
 
 import java.util.*;
 
@@ -23,16 +26,22 @@ import java.util.*;
 public class UserService implements UserDetailsService{
 	@Autowired 
 	private UserRepo userRepository;
+	@Autowired
+	private UserFavorRepoImpl userFavorRepoImpl;
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException{
 		/** query by username */
-		MyUser user = userRepository.findByUserName(username);
+		MyUser user = userRepository.findByUsername(username);
 		if (user == null) {
 			throw new UsernameNotFoundException("用户名不存在!");
 		}
 		List<GrantedAuthority> auths = new ArrayList<>();
 		auths.add(new SimpleGrantedAuthority("user"));
 		return new User(user.getUsername(), user.getHashedpassword(), auths);
+	}
+	
+	public JSONObject getUserFavor(List<Integer> params){
+		return userFavorRepoImpl.findByIdIn(params);
 	}
 }

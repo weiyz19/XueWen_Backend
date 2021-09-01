@@ -34,10 +34,8 @@ public class AuthService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 	
-	private String tokenHead = "Bearer ";
-	
 	public int register(MyUser user) {
-		if(userRepository.findByUserName(user.getUsername()) != null)
+		if(userRepository.findByUsername(user.getUsername()) != null)
 			return 1;
 		/** 不保存明文密码 */
 		user.setHashedpassword(passwordEncoder.encode(user.getHashedpassword()));
@@ -56,8 +54,7 @@ public class AuthService {
     }
 
     public String refresh(String oldToken) {
-        final String token = oldToken.substring(tokenHead.length());
-        // TODO: set a token in the db
+        final String token = oldToken.substring(JwtTokenUtil.TOKENHEAD.length());
         if (jwtTokenUtil.canRefresh(token)){
             return jwtTokenUtil.refreshToken(token);
         }

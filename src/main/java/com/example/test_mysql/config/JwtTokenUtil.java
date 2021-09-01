@@ -34,7 +34,10 @@ import javax.crypto.SecretKey;
 public class JwtTokenUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenUtil.class);
     private static SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private int expiration = 3000;
+    private int expiration = 604800;
+    
+	public static final String TOKENHEDER = "Authorization";
+	public static final String TOKENHEAD = "Bearer ";
     /**
      * 生成JWT的token
      */
@@ -42,14 +45,6 @@ public class JwtTokenUtil {
         return Jwts.builder()
                 .setClaims(claims)
                 .setExpiration(generateExpirationDate())
-                .signWith(key)
-                .compact();
-    }
-    /** 自定义过期时间 */
-    private String generateToken(Map<String, Object> claims, int exptime) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setExpiration(generateExpirationDate(exptime))
                 .signWith(key)
                 .compact();
     }
@@ -77,10 +72,6 @@ public class JwtTokenUtil {
     private Date generateExpirationDate() {
         return new Date(System.currentTimeMillis() + expiration * 1000);
     }
-    
-    private Date generateExpirationDate(int exptime) {
-        return new Date(System.currentTimeMillis() + exptime * 1000);
-    }
 
     /**
      * 从token中获取登录用户名
@@ -96,6 +87,22 @@ public class JwtTokenUtil {
         return username;
     }
 
+    // TODO: implement this
+//    /**
+//     * 从token中获取登录用户名
+//     */
+//    public static String parseUsername(String token) {
+//        String username;
+//        try {
+//            Claims claims = getClaimsFromToken(token);
+//            username =  claims.getSubject();
+//        } catch (Exception e) {
+//            username = null;
+//        }
+//        return username;
+//    }
+
+    
     /**
      * 验证token是否还有效
      *

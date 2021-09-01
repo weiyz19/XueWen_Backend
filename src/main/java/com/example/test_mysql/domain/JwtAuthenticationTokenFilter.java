@@ -32,19 +32,15 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
-    private String tokenHeader = "Authorization";
-
-    private String tokenHead = "Bearer ";
-
     @Override
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response,
             FilterChain chain) throws ServletException, IOException {
-    	String authHeader = request.getParameter(this.tokenHeader);
+    	String authHeader = request.getParameter(JwtTokenUtil.TOKENHEDER);
     	String username = null;
         String authToken = null;
-        if (authHeader != null && authHeader.startsWith(tokenHead)) {
-            authToken = authHeader.substring(tokenHead.length()); // The part after "Bearer "
+        if (authHeader != null && authHeader.startsWith(JwtTokenUtil.TOKENHEAD)) {
+            authToken = authHeader.substring(JwtTokenUtil.TOKENHEAD.length()); // The part after "Bearer "
            try {
         	   username = jwtTokenUtil.getUserNameFromToken(authToken);
            } catch (IllegalArgumentException e) {

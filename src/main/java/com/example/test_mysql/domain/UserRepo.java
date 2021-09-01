@@ -15,5 +15,5 @@ import org.springframework.data.repository.query.Param;
 public interface UserRepo extends CrudRepository<MyUser, Integer> {
 	
 	@Query("select t from MyUser t where t.username = :username")
-    MyUser findByUserName(@Param("username") String username);
+    MyUser findByUsername(@Param("username") String username);
 }

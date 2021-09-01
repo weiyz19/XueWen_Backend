@@ -5,7 +5,6 @@
  */
 package com.example.test_mysql.config;
 
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -29,21 +28,5 @@ public class WebConfig implements WebMvcConfigurer {
                 .maxAge(3600)
                 .allowedHeaders("*");
     }
-
-//    private CorsConfiguration buildConfig() {
-//        CorsConfiguration corsConfiguration = new CorsConfiguration();
-//        corsConfiguration.addAllowedOrigin("*");
-//        corsConfiguration.addAllowedHeader("*");
-//        corsConfiguration.addAllowedMethod("*");
-//        corsConfiguration.addExposedHeader("Authorization");
-//        return corsConfiguration;
-//    }
-//
-//    @Bean
-//    public CorsFilter corsFilter() {
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", buildConfig());
-//        return new CorsFilter(source);
-//    }
 }
 

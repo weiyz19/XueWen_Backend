@@ -6,8 +6,6 @@
 package com.example.test_mysql.domain;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.constraints.NotEmpty;
@@ -16,7 +14,6 @@ import javax.validation.constraints.NotEmpty;
 @Table(name = "userlist")
 public class MyUser {
   @Id		/** key in table */
-  @GeneratedValue(strategy=GenerationType.IDENTITY)
   private Integer id;
   
   @NotEmpty(message = "用户名不能为空")
