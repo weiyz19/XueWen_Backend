@@ -86,22 +86,6 @@ public class JwtTokenUtil {
         }
         return username;
     }
-
-    // TODO: implement this
-//    /**
-//     * 从token中获取登录用户名
-//     */
-//    public static String parseUsername(String token) {
-//        String username;
-//        try {
-//            Claims claims = getClaimsFromToken(token);
-//            username =  claims.getSubject();
-//        } catch (Exception e) {
-//            username = null;
-//        }
-//        return username;
-//    }
-
     
     /**
      * 验证token是否还有效

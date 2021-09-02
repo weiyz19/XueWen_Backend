@@ -5,6 +5,9 @@
  */
 package com.example.test_mysql.controller;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,8 @@ import com.example.test_mysql.domain.UserRepo;
 import com.example.test_mysql.service.AuthService;
 import com.example.test_mysql.service.UserService;
 
+import net.sf.json.JSONObject;
+
 @Controller // This means that this class is a Controller
 @RequestMapping(path="/user") // This means URL's start with /demo (after Application path)
 public class UserController {
@@ -33,6 +38,8 @@ public class UserController {
 	private AuthService authService;
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private JwtTokenUtil jwtTokenUtil;
   
 	@PostMapping(path="/register", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JsonResult addNewUser (@RequestParam String username,
@@ -75,11 +82,40 @@ public class UserController {
 		}
 	}
   
-	//TODO: implement this
-//	@GetMapping(path="/favor/get", produces = "application/json;charset=UTF-8")
-//	public @ResponseBody JwtAuthenticationResponse getUserFavor(HttpServletRequest request) {
-//		int type = Integer.parseInt(request.getParameter("type"));
-//		String username = JwtTokenUtil.getUserNameFromToken(request.getParameter(JwtTokenUtil.TOKENHEDER));
-//		return new JwtAuthenticationResponse<>(userRepository.findAll(), "success", "0", authService.refresh(request.getParameter(TOKENHEDER)));
-//	}
+	@GetMapping(path="/favor/get", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject getUserFavor(HttpServletRequest request) {
+		String jwtToken = request.getParameter(JwtTokenUtil.TOKENHEDER);
+		JSONObject resJsonObject = new JSONObject();
+		resJsonObject.put("code", "0");
+		resJsonObject.put("msg", "success");
+		resJsonObject.put("data", userService.getUserFavor(
+				jwtTokenUtil.getUserNameFromToken(jwtToken.substring(JwtTokenUtil.TOKENHEAD.length()))));
+		resJsonObject.put("token", authService.refresh(jwtToken));
+		return resJsonObject;
+	}
+	
+	@GetMapping(path="/favor/add", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject addUserFavor(HttpServletRequest request) {
+		String jwtToken = request.getParameter(JwtTokenUtil.TOKENHEDER);
+		// 0 表示实体操作   1 表示习题操作
+		String type = request.getParameter("type");
+		// 对于实体来讲是name  对于习题来讲是id
+		String index = request.getParameter("index");
+		List<Object> params = new LinkedList<>();
+		params.add(type);
+		params.add(index);
+		JSONObject resJsonObject = new JSONObject();
+		if (userService.updateUserFavor(params, jwtToken.substring(JwtTokenUtil.TOKENHEAD.length()))){
+			resJsonObject.put("code", "0");
+			resJsonObject.put("msg", "success");
+		} 
+		else {
+			resJsonObject.put("code", "1");
+			resJsonObject.put("msg", "failed");
+		}
+		resJsonObject.put("data", "");
+		resJsonObject.put("token", authService.refresh(jwtToken));
+		return resJsonObject;
+	}
+	
 }

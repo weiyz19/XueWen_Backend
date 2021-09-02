@@ -58,8 +58,8 @@ public class UserFavorRepoImpl {
 	@Modifying
 	/** 增加用户的收藏信息 */
 	public void updateFavorIn(List<Object> params) {
-		// userid	0:实体  实体名称 
-		// userid	1:习题  习题id
+		// 	0:实体  实体名称 userid
+		//  1:习题  习题id   userid
 		int id = (int) params.get(0);
 		int type = (int) params.get(1);
 		// 实体
@@ -89,7 +89,7 @@ public class UserFavorRepoImpl {
 			}
 		}
 		else {
-			int exID = (int) params.get(2);
+			int exID = Integer.parseInt((String) params.get(2));
 			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor"
 				+ " WHERE id = "
 				+ id);

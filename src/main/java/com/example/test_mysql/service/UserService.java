@@ -41,7 +41,20 @@ public class UserService implements UserDetailsService{
 		return new User(user.getUsername(), user.getHashedpassword(), auths);
 	}
 	
-	public JSONObject getUserFavor(List<Integer> params){
+	public JSONObject getUserFavor(String username){
+		List<Integer> params = new LinkedList<>();
+		params.add(userRepository.findByUsername(username).getId());
 		return userFavorRepoImpl.findByIdIn(params);
 	}
+	
+	public boolean updateUserFavor(List<Object> params, String username){
+		try {
+			params.add(userRepository.findByUsername(username).getId());
+			userFavorRepoImpl.updateFavorIn(params);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+	
 }

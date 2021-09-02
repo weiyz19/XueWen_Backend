@@ -70,6 +70,6 @@ public class MyEntity {
             ",attributes:" + StringEscapeUtils.unescapeJava(attributes) +
             ",content:" + StringEscapeUtils.unescapeJava(content) +
             ",type:" + StringEscapeUtils.unescapeJava(type) +
-            "}").toString();
+            "}").toString().replace("\n", "\\n");
 	}
 }
