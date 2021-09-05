@@ -25,7 +25,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint, Se
                          AuthenticationException authException)
             throws IOException, ServletException {
     	response.setContentType("application/json;charset=UTF-8");
-    	response.getWriter().append("{\"code\":2,\"msg\":\"没有凭证！请先登录！\",\"data\":\"\"}");
+    	response.getWriter().append("{\"code\":2,\"msg\":\"没有凭证！请先登录！\",\"data\":\"\",\"token\":\"\"}");
     	// 如果认证时出错 则返回没有权限 错误代码为2
     }
 }

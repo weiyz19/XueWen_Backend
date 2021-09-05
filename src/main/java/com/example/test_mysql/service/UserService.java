@@ -43,6 +43,7 @@ public class UserService implements UserDetailsService{
 		return new User(user.getUsername(), user.getHashedpassword(), auths);
 	}
 	
+	
 	public JSONArray getUserFavor(String userID, String type){
 		List<Integer> params = new LinkedList<>();
 		params.add(Integer.parseInt(userID));

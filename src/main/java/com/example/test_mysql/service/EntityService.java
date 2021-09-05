@@ -20,6 +20,7 @@ import net.sf.json.JSONArray;
 
 /** courses: 0. 语文 1. 数学 2. 英语 3. 物理 4. 化学 5. 生物 6. 历史 7. 地理 8. 政治 */
 @Service("EntityService")
+@Async("asyncServiceExecutor")
 public class EntityService {
 	
 	@Autowired
@@ -44,7 +45,7 @@ public class EntityService {
 			return null;
 		}
 	}
-	
+
 	public String getEntity(int course, String name, int userID) {
 		try {
 			List<Object> params = new LinkedList<>();
@@ -57,7 +58,7 @@ public class EntityService {
 		}
 	}
 	
-	@Async("asyncServiceExecutor")
+
 	public void updateHistory(List<Object> params) {
 		entityRepoImp.updateHistoryIn(params);
 	}

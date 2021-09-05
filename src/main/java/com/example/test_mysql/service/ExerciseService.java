@@ -21,6 +21,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 @Service("ExerciseService")
+@Async("asyncServiceExecutor")
 public class ExerciseService {
 	
 	@Autowired
@@ -79,7 +80,6 @@ public class ExerciseService {
 		return exerArray;
 	}
 
-	@Async("asyncServiceExecutor")
 	public void updateHistory(List<String> params) {
 		exerciseRepoImp.updateHistoryIn(params);
 	}

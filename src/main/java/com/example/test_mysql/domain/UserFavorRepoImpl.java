@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonArrayFormatVisitor;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -59,7 +60,17 @@ public class UserFavorRepoImpl {
 					+ ",\'[]\', \'[]\')");
 			entityManager.createNativeQuery(insertBuilder.toString()).executeUpdate();
 		}
-		else exerArray = JSONArray.fromObject(res.get(0).getExercises());
+		else { 
+			JSONArray idArray = JSONArray.fromObject(res.get(0).getExercises());
+			for (int i = 0; i < idArray.size(); ++i) {
+				// 遍历所有习题
+				sqlString = new StringBuilder("SELECT name FROM exercise_to_entity WHERE id = " + idArray.get(i));
+				JSONObject exerObject = new JSONObject();
+				exerObject.put("id", idArray.get(i));
+				exerObject.put("entities", JSONArray.fromObject(entityManager.createNativeQuery(sqlString.toString()).getSingleResult()));
+				exerArray.add(exerObject);
+			}
+		}
 		return exerArray;
 	}
 	
