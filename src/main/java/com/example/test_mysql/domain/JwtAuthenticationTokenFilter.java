@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.test_mysql.config.JwtTokenUtil;
+import com.example.test_mysql.config.RequestHeaderWrapper;
+
 import io.jsonwebtoken.ExpiredJwtException;
 
 @Component
@@ -29,6 +31,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
     @Autowired
     private UserDetailsService userDetailsService;
+    @Autowired
+    private UserRepo userRepo;
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
@@ -39,6 +43,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     	String authHeader = request.getParameter(JwtTokenUtil.TOKENHEDER);
     	String username = null;
         String authToken = null;
+        // 新的请求对象
+        RequestHeaderWrapper requestParamsWrapper = new RequestHeaderWrapper(request);
         if (authHeader != null && authHeader.startsWith(JwtTokenUtil.TOKENHEAD)) {
             authToken = authHeader.substring(JwtTokenUtil.TOKENHEAD.length()); // The part after "Bearer "
            try {
@@ -60,8 +66,10 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 logger.info("authenticated user " + username + ", setting security context");
                 // 传入上下文 完成认证
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                // 通过认证之后 在请求头里加入Id
+                requestParamsWrapper.addParameter("userID", String.valueOf(userRepo.findByUsername(username).getId()));
                 }
         }
-        chain.doFilter(request, response);
+        chain.doFilter(requestParamsWrapper, response);
     }
 }

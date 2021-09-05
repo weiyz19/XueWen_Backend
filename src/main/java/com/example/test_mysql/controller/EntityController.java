@@ -6,11 +6,10 @@
 package com.example.test_mysql.controller;
 
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.MappedSuperclass;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,8 +64,9 @@ public class EntityController {
 			HttpServletRequest request) {
     // @ResponseBody means the returned String is the response, not a view name
 		int course = Integer.parseInt(request.getParameter("course"));
+		int userID = Integer.parseInt(request.getParameterValues("userID")[0]);
 		String name = request.getParameter("name");
-		String myEntity = entityService.getEntity(course, name);
+		String myEntity = entityService.getEntity(course, name, userID);
 		Map<String, String> resMap = new HashMap<>();
 		JSONObject datajson = null;
 		if (myEntity == null) {
@@ -79,11 +79,26 @@ public class EntityController {
 			resMap.put("msg", "找到结果");
 			resMap.put("code", "0");
 			resMap.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+			List<Object> params = new LinkedList<>();
+			params.add(request.getParameter("course"));
+			params.add(name);
+			params.add(Integer.parseInt(request.getParameterValues("userID")[0]));
+			entityService.updateHistory(params);
+			
 		}
-		
 		JSONObject resjson = JSONObject.fromObject(resMap);
 		resjson.put("data", datajson);
 		return resjson;
 	}
 	
+	/** Entities only */
+	@GetMapping(path="/history", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject getUserHistory(HttpServletRequest request) {
+		JSONObject resJsonObject = new JSONObject();
+		resJsonObject.put("code", "0");
+		resJsonObject.put("msg", "success");
+		resJsonObject.put("data", entityService.getHistory(request.getParameterValues("userID")[0]));
+		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		return resJsonObject;
+	}
 }

@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.example.test_mysql.domain.EntityRepoImp;
@@ -44,14 +45,27 @@ public class EntityService {
 		}
 	}
 	
-	public String getEntity(int course, String name) {
+	public String getEntity(int course, String name, int userID) {
 		try {
 			List<Object> params = new LinkedList<>();
 			params.add(course);
 			params.add(name);
+			params.add(userID);
 			return entityRepoImp.findDetailByNameIn(params);
 		} catch (Exception e) {
 			return null;
 		}
 	}
+	
+	@Async("asyncServiceExecutor")
+	public void updateHistory(List<Object> params) {
+		entityRepoImp.updateHistoryIn(params);
+	}
+	
+	public JSONArray getHistory(String userID) {
+		List<Integer> params = new LinkedList<>();
+		params.add(Integer.parseInt(userID));
+		return entityRepoImp.findHistoryIn(params);
+	}
+	
 }

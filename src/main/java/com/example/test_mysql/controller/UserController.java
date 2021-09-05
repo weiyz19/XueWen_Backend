@@ -84,28 +84,32 @@ public class UserController {
   
 	@GetMapping(path="/favor/get", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject getUserFavor(HttpServletRequest request) {
-		String jwtToken = request.getParameter(JwtTokenUtil.TOKENHEDER);
 		JSONObject resJsonObject = new JSONObject();
 		resJsonObject.put("code", "0");
 		resJsonObject.put("msg", "success");
-		resJsonObject.put("data", userService.getUserFavor(
-				jwtTokenUtil.getUserNameFromToken(jwtToken.substring(JwtTokenUtil.TOKENHEAD.length()))));
-		resJsonObject.put("token", authService.refresh(jwtToken));
+		resJsonObject.put("data", userService.getUserFavor(request.getParameterValues("userID")[0], request.getParameter("type")));
+		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
 		return resJsonObject;
 	}
 	
-	@GetMapping(path="/favor/add", produces = "application/json;charset=UTF-8")
+	@PostMapping(path="/favor/update", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject addUserFavor(HttpServletRequest request) {
-		String jwtToken = request.getParameter(JwtTokenUtil.TOKENHEDER);
 		// 0 表示实体操作   1 表示习题操作
-		String type = request.getParameter("type");
+		int type = Integer.parseInt(request.getParameter("type"));
+		// 0 表示添加   1 表示删除 (可理解为该条目的当前状态)
+		int optype = Integer.parseInt(request.getParameter("op"));
 		// 对于实体来讲是name  对于习题来讲是id
 		String index = request.getParameter("index");
 		List<Object> params = new LinkedList<>();
 		params.add(type);
 		params.add(index);
+		params.add(Integer.parseInt(request.getParameterValues("userID")[0]));
+		if (type == 0) {
+			// 实体需要再加入科目 直接以字符串形式存储即可
+			params.add(request.getParameter("sbj"));
+		}
 		JSONObject resJsonObject = new JSONObject();
-		if (userService.updateUserFavor(params, jwtToken.substring(JwtTokenUtil.TOKENHEAD.length()))){
+		if (userService.updateUserFavor(params, optype)){
 			resJsonObject.put("code", "0");
 			resJsonObject.put("msg", "success");
 		} 
@@ -114,8 +118,7 @@ public class UserController {
 			resJsonObject.put("msg", "failed");
 		}
 		resJsonObject.put("data", "");
-		resJsonObject.put("token", authService.refresh(jwtToken));
+		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
 		return resJsonObject;
 	}
-	
 }

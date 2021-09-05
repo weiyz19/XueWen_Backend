@@ -13,11 +13,9 @@ import javax.persistence.Query;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
-import antlr.ASdebug.ASDebugStream;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -30,13 +28,11 @@ public class UserFavorRepoImpl {
 	@Transactional
 	@Modifying
 	/** 查找用户的收藏信息 */
-	public JSONObject findByIdIn(List<Integer> params) {
-		StringBuilder sqlString = new StringBuilder("SELECT * FROM user_favor"
-				+ " WHERE id = "
+	public JSONArray findEntityByIdIn(List<Integer> params) {
+		StringBuilder sqlString = new StringBuilder("SELECT * FROM user_favor WHERE id = "
 				+ params.get(0));
 		Query dataQuery = entityManager.createNativeQuery(sqlString.toString(), UserFavor.class);
 		List<UserFavor> res = dataQuery.getResultList();
-		JSONArray exerArray = new JSONArray();
 		JSONArray entyArray = new JSONArray();
 		if (res.isEmpty()) {
 			StringBuilder insertBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
@@ -44,52 +40,71 @@ public class UserFavorRepoImpl {
 					+ ",\'[]\', \'[]\')");
 			entityManager.createNativeQuery(insertBuilder.toString()).executeUpdate();
 		}
-		else {
-			exerArray = JSONArray.fromObject(res.get(0).getExercises());
-			entyArray = JSONArray.fromObject(res.get(0).getEntities());
+		else entyArray = JSONArray.fromObject(res.get(0).getEntities());
+		return entyArray;
+	}
+	
+	@Transactional
+	@Modifying
+	/** 查找用户的收藏信息 */
+	public JSONArray findExerciseByIdIn(List<Integer> params) {
+		StringBuilder sqlString = new StringBuilder("SELECT * FROM user_favor WHERE id = "
+				+ params.get(0));
+		Query dataQuery = entityManager.createNativeQuery(sqlString.toString(), UserFavor.class);
+		List<UserFavor> res = dataQuery.getResultList();
+		JSONArray exerArray = new JSONArray();
+		if (res.isEmpty()) {
+			StringBuilder insertBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
+					+ params.get(0)
+					+ ",\'[]\', \'[]\')");
+			entityManager.createNativeQuery(insertBuilder.toString()).executeUpdate();
 		}
-		JSONObject resJsonObject = new JSONObject();
-		resJsonObject.put("exercises", exerArray);
-		resJsonObject.put("entities", entyArray);
-		return resJsonObject;
+		else exerArray = JSONArray.fromObject(res.get(0).getExercises());
+		return exerArray;
 	}
 	
 	@Transactional
 	@Modifying
 	/** 增加用户的收藏信息 */
 	public void updateFavorIn(List<Object> params) {
-		// 	0:实体  实体名称 userid
+		// 	0:实体  实体名称 userid   sbj
 		//  1:习题  习题id   userid
-		int id = (int) params.get(0);
-		int type = (int) params.get(1);
+		int id = (int) params.get(2);
+		int type = (int) params.get(0);
 		// 实体
 		if (type == 0) {
-			String nameString = (String) params.get(2);
+			String newEntry = new StringBuilder("{ name: \'" 
+				+ (String) params.get(1) 
+				+ "\', sbj: \'"				
+				+ (String) params.get(3)
+				+ "\'}").toString();
 			StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_favor"
 				+ " WHERE id = "
 				+ id);
-			List<String> resList = entityManager.createNativeQuery(sqlBuilder.toString(), String.class).getResultList();
-			if (resList.isEmpty()) {
+			List<String> entList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
+			if (entList.isEmpty()) {
 				sqlBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
 					+ id
 					+ ",\'["
-					+ nameString
+					+ newEntry
 					+ "]\', \'[]\')");
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 			else {
-				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
-				entitiesArray.add(nameString);
+				JSONArray entitiesArray = JSONArray.fromObject(entList.get(0));
+				JSONObject sg = JSONObject.fromObject(newEntry);
+				if(entitiesArray.contains(sg)) return;
+				entitiesArray.add(0, sg);
 				sqlBuilder = new StringBuilder("UPDATE user_favor SET entities"
 						+ "=\'"
 						+ entitiesArray.toString()
-						+ "\', WHERE id=" 
+						+ "\' WHERE id = " 
 						+ id);
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 		}
 		else {
-			int exID = Integer.parseInt((String) params.get(2));
+			int exID = Integer.parseInt((String) params.get(1));
 			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor"
 				+ " WHERE id = "
 				+ id);
@@ -104,15 +119,76 @@ public class UserFavorRepoImpl {
 			}
 			else {
 				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
-				entitiesArray.add(exID);
+				if(entitiesArray.contains(exID)) return;
+				entitiesArray.add(0, exID);
 				sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises"
 						+ "=\'"
 						+ entitiesArray.toString()
-						+ "\', WHERE id=" 
+						+ "\' WHERE id=" 
 						+ id);
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 		}
 	}
+	
+	@Transactional
+	@Modifying
+	/** 删除用户的收藏信息 */
+	public void cancelFavorIn(List<Object> params) {
+		// 	0:实体  实体名称 userid
+		//  1:习题  习题id   userid
+		int id = (int) params.get(2);
+		int type = (int) params.get(0);
+		// 实体
+		if (type == 0) {
+			StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_favor"
+				+ " WHERE id = "
+				+ id);
+			List<String> resList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
+			if (resList.isEmpty()) return;
+			else {
+				String newEntry = new StringBuilder("{ name: \'" 
+						+ (String) params.get(1) 
+						+ "\', sbj: \'"				
+						+ (String) params.get(3)
+						+ "\'}").toString();
+				JSONObject sg = JSONObject.fromObject(newEntry);
+				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
+				if(!entitiesArray.contains(sg)) return;
+				entitiesArray.remove(sg);
+				sqlBuilder = new StringBuilder("UPDATE user_favor SET entities"
+						+ "=\'"
+						+ entitiesArray.toString()
+						+ "\' WHERE id = " 
+						+ id);
+				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
+			}
+		}
+		else {
+			int exID = Integer.parseInt((String) params.get(1));
+			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor"
+				+ " WHERE id = "
+				+ id);
+			List<String> resList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
+			if (resList.isEmpty()) return;
+			else {
+				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
+				// TODO: 测试这玩意能用不
+				if(!entitiesArray.contains(exID)) return;
+				for(int i = 0; i < entitiesArray.size(); ++i) {
+					if (entitiesArray.get(i).equals(exID)) {
+						entitiesArray.remove(i); break;
+					}
+				}
+				sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises"
+						+ "=\'"
+						+ entitiesArray.toString()
+						+ "\' WHERE id=" 
+						+ id);
+				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
+			}
+		}
+	}
+	
 }
 

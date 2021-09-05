@@ -12,11 +12,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.example.test_mysql.domain.EntityRepoImp;
 import com.example.test_mysql.domain.ExerciseRepoImpl;
-import com.example.test_mysql.domain.MyExercise;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -28,13 +27,13 @@ public class ExerciseService {
 	private ExerciseRepoImpl exerciseRepoImp;
 	
 	/** 如果有就不需要 */
-	public JSONArray findExercises(String name) {
+	public JSONArray findExercises(String name, String userID) {
 		List<String> nameList = new LinkedList<>();
 		nameList.add(name);
+		nameList.add(userID);
 		return exerciseRepoImp.findByNameIn(nameList);
 	}
 	
-	// TODO: 做成异步操作
 	public JSONArray updateExercise(String name, JSONArray exercises) {
 		JSONArray exerArray = new JSONArray();
 		// 用于存放用于更新的参数
@@ -59,10 +58,11 @@ public class ExerciseService {
 				// 如果答案可以被解析 那就继续下去 否则就跳过
 				int ID = (int) jsonObject.get("id");
 				JSONObject exerObject = new JSONObject();
-				// exerObject.put("id", ID);
+				exerObject.put("id", ID);
 				exerObject.put("answer", answer.toString());
 				exerObject.put("content", body_optionStrings[0]);
 				exerObject.put("options", options);
+				exerObject.put("entity", "[\""+ name + "\"]");
 				exerArray.add(exerObject);
 				List<Object> exercise = new LinkedList<>();
 				exercise.add(ID);
@@ -74,12 +74,13 @@ public class ExerciseService {
 		}
 		params.add(exerciseList);
 		params.add(name);
-		try {
-			exerciseRepoImp.updateExerciseIn(params);
-		}
-		catch (Exception e) {
-			System.out.println("???what???");
-		}
+		// 尝试异步操作
+		exerciseRepoImp.updateExerciseIn(params);
 		return exerArray;
+	}
+
+	@Async("asyncServiceExecutor")
+	public void updateHistory(List<String> params) {
+		exerciseRepoImp.updateHistoryIn(params);
 	}
 }

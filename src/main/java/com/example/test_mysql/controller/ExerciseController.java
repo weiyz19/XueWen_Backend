@@ -6,21 +6,16 @@
 package com.example.test_mysql.controller;
 
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.MappedSuperclass;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -53,7 +48,8 @@ public class ExerciseController {
 			HttpServletRequest request) {
     // @ResponseBody means the returned String is the response, not a view name
 		String name = request.getParameter("name");
-		JSONArray exerciseList = exerciseService.findExercises(name);
+		String userID = request.getParameterValues("userID")[0];
+		JSONArray exerciseList = exerciseService.findExercises(name, userID);
 		if (exerciseList == null) {
 			Map<String,String> params = new HashMap<>();
 			params.put("uriName", name);
@@ -68,30 +64,24 @@ public class ExerciseController {
 		resjson.put("data", exerciseList);
 		return resjson;
 	}
-//	
-//	@PostMapping(path="/detail", produces = "application/json;charset=UTF-8")
-//	public @ResponseBody JSONObject getEntityDetail (
-//			HttpServletRequest request) {
-//    // @ResponseBody means the returned String is the response, not a view name
-//		int course = Integer.parseInt(request.getParameter("course"));
-//		String name = request.getParameter("name");
-//		String myEntity = entityService.getEntity(course, name);
-//		Map<String, String> resMap = new HashMap<>();
-//		JSONObject datajson = null;
-//		if (myEntity == null) {
-//			resMap.put("msg", "没有找到结果");
-//			resMap.put("code", "1");
-//			resMap.put("token", authService.refresh(request.getParameter(tokenHeader)));
-//		}
-//		else {
-//			datajson = JSONObject.fromObject(myEntity);
-//			resMap.put("msg", "找到结果");
-//			resMap.put("code", "0");
-//			resMap.put("token", authService.refresh(request.getParameter(tokenHeader)));
-//		}
-//		
-//		JSONObject resjson = JSONObject.fromObject(resMap);
-//		resjson.put("data", datajson);
-//		return resjson;
-//	}
+	
+	
+	/** 接收历史记录的内容包括：习题ID，是否正确，选择的选项 */
+	@PostMapping(path="/log", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject getEntityDetail (
+			HttpServletRequest request) {
+    // @ResponseBody means the returned String is the response, not a view name
+		List<String> params = new LinkedList<>();
+		params.add(request.getParameter("id"));
+		params.add(request.getParameter("isTrue"));
+		params.add(request.getParameter("option"));
+		params.add(request.getParameterValues("userID")[0]);
+		exerciseService.updateHistory(params);
+		JSONObject datajson = new JSONObject();
+		datajson.put("msg", "更新成功");
+		datajson.put("code", "0");
+		datajson.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		datajson.put("data", "");
+		return datajson;
+	}
 }

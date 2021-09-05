@@ -48,11 +48,13 @@ public class MyExercise {
 		this.options = options;
 	}
 	
-	public String toJSON() {
+	public String toJSON(String isStarred, String names) {
 		return new StringBuilder("{" +
 				"answer:\'" + StringEscapeUtils.unescapeJava(answer) +
 	            "\',content:\'" + StringEscapeUtils.unescapeJava(content) +
 	            "\',options:" + StringEscapeUtils.unescapeJava(options) +
+	            ",isStarred:\'" + isStarred +
+	            "\',entity:" + StringEscapeUtils.unescapeJava(names) +
 	            "}").toString();
 	}
 }
