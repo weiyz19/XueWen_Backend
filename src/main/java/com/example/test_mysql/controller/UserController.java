@@ -84,6 +84,7 @@ public class UserController {
 	@PostMapping(path="/refresh", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject refreshAndGetToken(HttpServletRequest request) {
 		String refreshedToken = authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER));
+		MyUser user = userRepository.findById(Integer.parseInt(request.getParameterValues("userID")[0])).get();
 		JSONObject response = new JSONObject();
 		if(refreshedToken == null) {
 			response.put("data", "");
@@ -91,7 +92,10 @@ public class UserController {
 			response.put("code", "1");
 			response.put("token", "");
 		} else {
-			response.put("data", "");
+			JSONObject info = new JSONObject();
+			info.put("email", user.getEmail());
+			info.put("phone", user.getEmail());
+			response.put("data", info);
 			response.put("msg", "token刷新成功!");
 			response.put("code", "0");
 			response.put("token", refreshedToken);
@@ -138,4 +142,19 @@ public class UserController {
 		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
 		return resJsonObject;
 	}
+	
+	@GetMapping(path="/overall", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject getUserHistory(HttpServletRequest request) {
+		JSONObject resJsonObject = new JSONObject();
+		resJsonObject.put("code", "0");
+		resJsonObject.put("msg", "success");
+		try {
+			resJsonObject.put("data", userService.getUserHistory(request.getParameterValues("userID")[0]));
+		} catch (Exception e) {
+			resJsonObject.put("data", "");
+		}
+		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		return resJsonObject;
+	}
+	
 }

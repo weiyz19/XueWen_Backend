@@ -80,6 +80,7 @@ public class ExerciseService {
 		return exerArray;
 	}
 
+	@Async("asyncServiceExecutor")
 	public void updateHistory(List<String> params) {
 		exerciseRepoImp.updateHistoryIn(params);
 	}

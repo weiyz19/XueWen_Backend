@@ -85,7 +85,6 @@ public class EntityController {
 			params.add(name);
 			params.add(Integer.parseInt(request.getParameterValues("userID")[0]));
 			entityService.updateHistory(params);
-			
 		}
 		JSONObject resjson = JSONObject.fromObject(resMap);
 		resjson.put("data", datajson);

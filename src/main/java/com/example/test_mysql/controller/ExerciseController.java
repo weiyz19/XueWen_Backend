@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -67,14 +68,11 @@ public class ExerciseController {
 	
 	
 	/** 接收历史记录的内容包括：习题ID，是否正确，选择的选项 */
-	@PostMapping(path="/log", produces = "application/json;charset=UTF-8")
+	@GetMapping(path="/log", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject getEntityDetail (
 			HttpServletRequest request) {
     // @ResponseBody means the returned String is the response, not a view name
 		List<String> params = new LinkedList<>();
-		params.add(request.getParameter("id"));
-		params.add(request.getParameter("isTrue"));
-		params.add(request.getParameter("option"));
 		params.add(request.getParameterValues("userID")[0]);
 		exerciseService.updateHistory(params);
 		JSONObject datajson = new JSONObject();

@@ -5,7 +5,10 @@
  */
 package com.example.test_mysql.domain;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -30,7 +33,8 @@ public class UserFavorRepoImpl {
 
 	// 日期形式：年月日 时分秒
 	private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-	
+	private final long timerange = 604800000;
+	private final long oneday = 86400000;
 	@Transactional
 	@Modifying
 	/** 查找用户的收藏信息 */
@@ -144,7 +148,7 @@ public class UserFavorRepoImpl {
 				for (int i = 0; i < entitiesArray.size(); ++i) {
 					if ((int) entitiesArray.getJSONObject(i).get("id") == exID) return;
 				}
-				entitiesArray.add(0, exID);
+				entitiesArray.add(0, newEntry);
 				sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises"
 						+ "=\'"
 						+ entitiesArray.toString()
@@ -212,6 +216,37 @@ public class UserFavorRepoImpl {
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 		}
+	}
+	
+	@Transactional
+	@Modifying
+	/** 查找用户的历史总览信息 */
+	public JSONObject findHistoryByIdIn(List<Integer> params) throws ParseException {
+		StringBuilder sqlString = new StringBuilder("SELECT exercise_count, entity_count FROM user_history WHERE id = "
+				+ params.get(0));
+		List<Object> res = entityManager.createNativeQuery(sqlString.toString()).getResultList();
+		JSONObject userInfo = new JSONObject();
+		if (res.isEmpty()) {
+			userInfo.put("entity", JSONArray.fromObject(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0)));
+			userInfo.put("exercise", JSONArray.fromObject(Arrays.asList(0, 0, 0, 0, 0, 0, 0)));
+		}
+		else {
+			long time = sdf.parse(sdf.format(new Date())).getTime();
+			JSONArray logJsonArray = JSONArray.fromObject(res.get(0));
+			userInfo.put("entity", logJsonArray.getJSONArray(1));
+			JSONArray exList = logJsonArray.getJSONArray(0);
+			JSONArray dateList = JSONArray.fromObject(Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+			int minNum = 7;
+			if (exList.size() < 7) minNum = exList.size();
+			for (int i = 0; (i < exList.size() && i < 7); i++) {
+				JSONObject ex = JSONObject.fromObject(exList.get(i));
+				long diff = time - sdf.parse(ex.getString("date")).getTime();
+				if (diff < timerange)
+					dateList.set((int) (diff / oneday), ex.get("count"));
+			}
+			userInfo.put("exercise", dateList);
+		}
+		return userInfo;
 	}
 	
 }

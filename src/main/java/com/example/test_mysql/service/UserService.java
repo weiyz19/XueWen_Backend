@@ -22,6 +22,7 @@ import com.example.test_mysql.domain.UserRepo;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import java.text.ParseException;
 import java.util.*;
 
 @Service("userDetailsService")
@@ -50,6 +51,13 @@ public class UserService implements UserDetailsService{
 		// 拿到实体
 		if (type.equals("0")) return userFavorRepoImpl.findEntityByIdIn(params);
 		else return userFavorRepoImpl.findExerciseByIdIn(params);
+	}
+	
+	public JSONObject getUserHistory(String userID) throws ParseException{
+		List<Integer> params = new LinkedList<>();
+		params.add(Integer.parseInt(userID));
+		// 拿到实体
+		return userFavorRepoImpl.findHistoryByIdIn(params);
 	}
 	
 	public boolean updateUserFavor(List<Object> params, int optype){

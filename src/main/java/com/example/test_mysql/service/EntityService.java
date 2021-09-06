@@ -57,7 +57,7 @@ public class EntityService {
 		}
 	}
 	
-
+	@Async("asyncServiceExecutor")
 	public void updateHistory(List<Object> params) {
 		entityRepoImp.updateHistoryIn(params);
 	}

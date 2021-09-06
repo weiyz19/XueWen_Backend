@@ -5,6 +5,8 @@
  */
 package com.example.test_mysql.domain;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -33,6 +35,9 @@ public class ExerciseRepoImpl {
 	private static final String paddingString = "\',\'";
 
 	private static final Logger logger = LoggerFactory.getLogger(ExerciseRepoImpl.class);
+	
+	// 日期形式：年月日 时分秒
+	private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 	
 	public JSONArray findByNameIn(List<String> params) {
 		StringBuilder sqlString = new StringBuilder("SELECT id FROM " 
@@ -143,33 +148,35 @@ public class ExerciseRepoImpl {
 	@Transactional
 	@Modifying
 	public void updateHistoryIn(List<String> params) {
-		// id isTrue option userID
-		int id = Integer.parseInt(params.get(0));
-		int isTrue = Integer.parseInt(params.get(1));
-		String option = params.get(2);
-		int userID = Integer.parseInt(params.get(3));
-		// 实体
-		String newEntry = new StringBuilder(
-				"{ id: " + id + ", isTrue:" + isTrue + ", option: \"" + option + "\"}").toString();
-		StringBuilder sqlBuilder = new StringBuilder("SELECT exercise FROM user_history" + " WHERE id = " + id);
+		// userID
+		int userID = Integer.parseInt(params.get(0));
+		// 当前的日期
+		String dateString = sdf.format(new Date());
+		StringBuilder sqlBuilder = new StringBuilder("SELECT exercise_count FROM user_history" + " WHERE id = " + userID);
 		List<String> entList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
 		// 同时只允许一个方法读写
 		synchronized (entityManager) {
 			if (entList.isEmpty()) {
-				sqlBuilder = new StringBuilder("INSERT INTO user_history VALUES(" + id + ",\'[]\', \'[" + newEntry + "]\')");
+				sqlBuilder = new StringBuilder("INSERT INTO user_history VALUES(" + userID + ",\'[]\', \'[]\', \'[{date:\'" + dateString + "\', count:1}]\')");
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			} else {
-				JSONArray exerciseArray = JSONArray.fromObject(entList.get(0));
-				JSONObject sg = JSONObject.fromObject(newEntry);
-				for (int i = 0; i < exerciseArray.size(); i++) {
-					if ((int) exerciseArray.getJSONObject(i).get("id") == id) {
-						exerciseArray.remove(i);
-						break;
+				JSONArray dateArray = JSONArray.fromObject(entList.get(0));
+				for (int i = 0; i < dateArray.size(); i++) {
+					if (dateArray.getJSONObject(i).getString("date").equals(dateString)) {
+						int ccount = (int) dateArray.getJSONObject(i).get("count");
+						JSONObject newEntry = new JSONObject();
+						newEntry.put("date", dateString);
+						newEntry.put("count", ccount + 1);
+						dateArray.set(i, newEntry);
+						return;
 					}
 				}
 				// 移动到最前端
-				exerciseArray.add(0, sg);
-				sqlBuilder = new StringBuilder("UPDATE user_history SET exercise =\'" + exerciseArray.toString() + "\' WHERE id = " + id);
+				JSONObject newEntry = new JSONObject();
+				newEntry.put("date", dateString);
+				newEntry.put("count", 1);
+				dateArray.add(0, newEntry);
+				sqlBuilder = new StringBuilder("UPDATE user_history SET exercise_count =\'" + dateArray.toString() + "\' WHERE id = " + userID);
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 		}

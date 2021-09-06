@@ -18,13 +18,13 @@ import javax.persistence.Query;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.hibernate.query.criteria.internal.expression.function.AggregationFunction.COUNT;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import net.sf.json.util.NewBeanInstanceStrategy;
 
 @Component
 public class EntityRepoImp{
@@ -138,7 +138,7 @@ public class EntityRepoImp{
 		if (res.isEmpty()) {
 			StringBuilder insertBuilder = new StringBuilder("INSERT INTO user_history VALUES("
 					+ params.get(0)
-					+ ",\'[]\', \'[]\')");
+					+ ",\'[]\', \'[0,0,0,0,0,0,0,0,0]\', \'[]\')");
 			entityManager.createNativeQuery(insertBuilder.toString()).executeUpdate();
 		}
 		else entyArray = JSONArray.fromObject(res.get(0));
@@ -150,16 +150,17 @@ public class EntityRepoImp{
 	/** 增加用户的历史记录 */
 	public void updateHistoryIn(List<Object> params) {
 		//  String 课程  String 实体名  int userid
+		String course = (String) params.get(0);
 		int id = (int) params.get(2);
 		// 实体
 		String newEntry = new StringBuilder(
-				"{ name: \"" + (String) params.get(1) + "\", sbj: \"" + (String) params.get(0) + "\"}").toString();
-		StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_history" + " WHERE id = " + id);
+				"{ name: \"" + (String) params.get(1) + "\", sbj: \"" + course + "\"}").toString();
+		StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_history WHERE id = " + id);
 		List<String> entList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
 		// 同时只允许一个方法读写
 		synchronized (entityManager) {
 			if (entList.isEmpty()) {
-				sqlBuilder = new StringBuilder("INSERT INTO user_history VALUES(" + id + ",\'[" + newEntry + "]\', \'[]\')");
+				sqlBuilder = new StringBuilder("INSERT INTO user_history VALUES(" + id + ",\'[" + newEntry + "]\', \'[0,0,0,0,0,0,0,0,0]\', \'[]\')");
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			} else {
 				JSONArray entitiesArray = JSONArray.fromObject(entList.get(0));
@@ -170,6 +171,13 @@ public class EntityRepoImp{
 				sqlBuilder = new StringBuilder("UPDATE user_history SET entities =\'" + entitiesArray.toString() + "\' WHERE id = " + id);
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
+			String getString = new StringBuilder("SELECT entity_count FROM user_history WHERE id = ").append(id).toString();
+			JSONArray countArray = JSONArray.fromObject(entityManager.createNativeQuery(getString).getSingleResult());
+			int courseidx = Integer.parseInt(course);
+			int oldnum = (int) countArray.remove(courseidx);
+			countArray.add(courseidx, oldnum + 1);
+			sqlBuilder = new StringBuilder("UPDATE user_history SET entity_count =\'" + countArray.toString() + "\' WHERE id = " + id);
+			entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 		}
 	}
 	
