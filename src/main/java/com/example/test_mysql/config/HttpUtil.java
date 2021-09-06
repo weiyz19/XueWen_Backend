@@ -8,7 +8,6 @@ package com.example.test_mysql.config;
 import java.util.Map;
 
 import org.springframework.http.*;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 public class HttpUtil {

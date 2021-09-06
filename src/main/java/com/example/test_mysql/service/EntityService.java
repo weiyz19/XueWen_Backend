@@ -20,7 +20,6 @@ import net.sf.json.JSONArray;
 
 /** courses: 0. 语文 1. 数学 2. 英语 3. 物理 4. 化学 5. 生物 6. 历史 7. 地理 8. 政治 */
 @Service("EntityService")
-@Async("asyncServiceExecutor")
 public class EntityService {
 	
 	@Autowired
@@ -67,6 +66,13 @@ public class EntityService {
 		List<Integer> params = new LinkedList<>();
 		params.add(Integer.parseInt(userID));
 		return entityRepoImp.findHistoryIn(params);
+	}
+	
+	public JSONArray getUnique(String userID, String course) {
+		List<String> params = new LinkedList<>();
+		params.add(userID);
+		params.add(course);
+		return entityRepoImp.getUniqueIn(params);
 	}
 	
 }

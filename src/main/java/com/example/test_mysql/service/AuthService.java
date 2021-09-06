@@ -5,6 +5,8 @@
  */
 package com.example.test_mysql.service;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,13 +43,17 @@ public class AuthService {
         return 0;
     }
 
-    public String login(String username, String password) throws AuthenticationException {
+    public List<String> login(String username, String password) throws AuthenticationException {
     	try {
     		authenticate(username, password);
-    		final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            return jwtTokenUtil.generateToken(userDetails);
+    		MyUser user = userRepository.findByUsername(username);
+    		List<String> infoList = new LinkedList<>();
+    		infoList.add(user.getEmail());
+    		infoList.add(user.getPhone());
+    		infoList.add(jwtTokenUtil.generateToken(username));
+            return infoList;
 		} catch (Exception e) {		// 如果有问题 就返回空的token
-			return "";
+			return null;
 		}
     }
 

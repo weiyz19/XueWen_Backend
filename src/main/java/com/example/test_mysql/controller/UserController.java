@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.example.test_mysql.config.JwtTokenUtil;
 import com.example.test_mysql.domain.AuthenticationException;
 import com.example.test_mysql.domain.JsonResult;
-import com.example.test_mysql.domain.JwtAuthenticationResponse;
 import com.example.test_mysql.domain.MyUser;
 import com.example.test_mysql.domain.UserRepo;
 import com.example.test_mysql.service.AuthService;
@@ -63,23 +62,41 @@ public class UserController {
 	}
 
 	@PostMapping(path="/login", produces = "application/json;charset=UTF-8")
-	public @ResponseBody JwtAuthenticationResponse userlogin(
+	public @ResponseBody JSONObject userlogin(
 			@RequestParam String username, @RequestParam String password) throws AuthenticationException{
-		final String token = authService.login(username, password);
-		if (token.equals("")) {
-			return new JwtAuthenticationResponse<>("", "登录失败!", "1", token);
+		final List<String> infoList = authService.login(username, password);
+		JSONObject response = new JSONObject();
+		if (infoList == null) {
+			response.put("data", "");
+			response.put("msg", "登录失败!");
+			response.put("code", "1");
+			response.put("token", "");
+			return response;
 		}
-		return new JwtAuthenticationResponse<>("", "登录成功!", "0", token);
+		response.put("data", JSONObject.fromObject(new StringBuilder("{email:\'").append(infoList.get(0))
+				.append("\', phone:\'").append(infoList.get(1)).append("\'}").toString()));
+		response.put("msg", "登录成功!");
+		response.put("code", "0");
+		response.put("token", infoList.get(2));
+		return response;
 	}
 
 	@PostMapping(path="/refresh", produces = "application/json;charset=UTF-8")
-	public @ResponseBody JwtAuthenticationResponse refreshAndGetToken(HttpServletRequest request) {
+	public @ResponseBody JSONObject refreshAndGetToken(HttpServletRequest request) {
 		String refreshedToken = authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER));
+		JSONObject response = new JSONObject();
 		if(refreshedToken == null) {
-			return new JwtAuthenticationResponse<>("", "token刷新失败!", "1", "");
+			response.put("data", "");
+			response.put("msg", "token刷新失败!");
+			response.put("code", "1");
+			response.put("token", "");
 		} else {
-			return new JwtAuthenticationResponse<>("", "token刷新成功!", "0", refreshedToken);
+			response.put("data", "");
+			response.put("msg", "token刷新成功!");
+			response.put("code", "0");
+			response.put("token", refreshedToken);
 		}
+		return response;
 	}
   
 	@GetMapping(path="/favor/get", produces = "application/json;charset=UTF-8")

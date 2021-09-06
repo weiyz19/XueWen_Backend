@@ -5,6 +5,10 @@
  */
 package com.example.test_mysql.domain;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,12 +17,14 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import net.sf.json.util.NewBeanInstanceStrategy;
 
 @Component
 public class EntityRepoImp{
@@ -28,6 +34,8 @@ public class EntityRepoImp{
 	
 	final String[] courses = {"chinese_detail_list", "math_detail_list", "english_detail_list", "physics_detail_list",
 			"chemistry_detail_list", "biology_detail_list", "history_detail_list", "geo_detail_list", "politics_detail_list"};
+	
+	final String[] usertable = {"user_favor", "user_history"};
 	
 	
 	@SuppressWarnings("unchecked")
@@ -90,7 +98,7 @@ public class EntityRepoImp{
 	 * return 查找到的习题详情信息
 	 * */
 	public String findDetailByNameIn(List<Object> params) {
-		StringBuilder sqlString = new StringBuilder( "SELECT * FROM " 
+		StringBuilder sqlString = new StringBuilder("SELECT * FROM " 
 				+ courses[(int)params.get(0)] 
 				+ " WHERE name = \'" 
 				+ params.get(1) 
@@ -163,6 +171,88 @@ public class EntityRepoImp{
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 		}
+	}
+	
+	private List<String> getRelatedIn(List<String> params) {
+		int userID = Integer.parseInt(params.get(0));
+		String course = params.get(1);
+		int tablename = Integer.parseInt(params.get(2));
+		StringBuilder favorString = new StringBuilder("SELECT * FROM " + usertable[tablename] + " WHERE id = "
+				+ userID);
+		List<UserFavor> favor = entityManager.createNativeQuery(favorString.toString(), UserFavor.class).getResultList();
+		List<String> entyArray = new LinkedList<>();
+		// 优先取出收藏
+		if (!favor.isEmpty()) {
+			UserFavor userFavor = favor.get(0);
+			JSONArray en = JSONArray.fromObject(userFavor.getEntities());
+			JSONArray ex = JSONArray.fromObject(userFavor.getExercises());
+			// 拿到它的所有关联实体
+			for (int i = 0; i < en.size(); ++i) {
+				// 拿到它的关联知识点
+				if (((String)en.getJSONObject(i).get("sbj")).equals(course)) {
+					favorString = new StringBuilder("SELECT relations FROM " + courses[Integer.parseInt(course)]
+						+ " WHERE name = \'"
+						+ en.getJSONObject(i).get("name") 
+						+ "\'");
+					JSONObject related = JSONObject.fromObject(entityManager.createNativeQuery(favorString.toString()).getSingleResult());
+					for (Object object : related.values()) {
+						JSONArray namesArray = (JSONArray) object;
+						for(int j = 0; j < namesArray.size(); ++j)
+							entyArray.add(namesArray.getString(j));
+					}
+				}
+			}
+			for (int k = 0; k < ex.size(); ++k) {
+				// 拿到它的习题的关联知识点
+				int exID = (int) ex.getJSONObject(k).get("id");
+				favorString = new StringBuilder("SELECT name FROM exercises_to_entity WHERE id=" + exID);
+				JSONArray relatedEnt = JSONArray.fromObject(entityManager.createNativeQuery(favorString.toString()).getSingleResult());
+				// 检查每个关联的知识点
+				for (int j = 0; j < relatedEnt.size(); j++) {
+					String name = relatedEnt.getString(j);
+					StringBuilder checkString = new StringBuilder("SELECT * FROM " + courses[Integer.parseInt(course)] + " WHERE name=" + name);
+					if(!entityManager.createNativeQuery(checkString.toString()).getResultList().isEmpty()) {
+						entyArray.add(name);
+					}
+				}
+			}
+		}
+		return entyArray;
+	}
+	
+	/** 为用户生成个性化实体推荐 */
+	public JSONArray getUniqueIn(List<String> params) {
+		params.add("0");
+		List<String> entyArray = getRelatedIn(params);
+		if (entyArray.size() < 200) {
+			params.remove(2);
+			params.add("1");
+			entyArray.addAll(getRelatedIn(params));
+		}
+		String course = params.get(1);
+		StringBuilder randomString = new StringBuilder("SELECT name FROM " + courses[Integer.parseInt(course)]
+				+ " WHERE attributes != \'{}\' OR content != \'[]\'");
+		List<String> nameList = entityManager.createNativeQuery(randomString.toString()).getResultList();
+		Collections.shuffle(nameList);
+		entyArray.addAll(nameList.subList(0, 200));
+		// 去重
+		HashSet<String> set = new HashSet<>(entyArray);
+		entyArray.clear();
+		entyArray.addAll(set);
+		JSONArray entyJsonArray = new JSONArray();
+		Collections.shuffle(entyArray);
+		for (int i = 0; i < 50; i++) {
+			String entityName = entyArray.get(i);
+			StringBuilder contentString = new StringBuilder("SELECT content FROM " + courses[Integer.parseInt(course)]
+					+ " WHERE name=\'" + entityName+ "\'");
+			JSONObject entryJsonObject = new JSONObject();
+			entryJsonObject.put("name", entityName);
+			entryJsonObject.put("sbj", course);
+			entryJsonObject.put("content", StringEscapeUtils.unescapeJava(
+					entityManager.createNativeQuery(contentString.toString()).getSingleResult().toString()));
+			entyJsonArray.add(entryJsonObject);
+		}
+		return entyJsonArray;
 	}
 }
 

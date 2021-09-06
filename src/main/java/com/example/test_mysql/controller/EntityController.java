@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -101,4 +102,16 @@ public class EntityController {
 		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
 		return resJsonObject;
 	}
+	
+	/** Entities only  指定学科 */
+	@GetMapping(path="/recommend", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject getUserUnique(HttpServletRequest request) {
+		JSONObject resJsonObject = new JSONObject();
+		resJsonObject.put("code", "0");
+		resJsonObject.put("msg", "success");
+		resJsonObject.put("data", entityService.getUnique(request.getParameterValues("userID")[0], request.getParameter("course")));
+		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		return resJsonObject;
+	}
+	
 }

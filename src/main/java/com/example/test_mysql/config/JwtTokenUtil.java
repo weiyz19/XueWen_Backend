@@ -127,6 +127,16 @@ public class JwtTokenUtil {
         claims.put(Claims.ISSUED_AT, new Date());
         return generateToken(claims);
     }
+    
+    /**
+     * 根据用户信息生成token
+     */
+    public String generateToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(Claims.SUBJECT, username);
+        claims.put(Claims.ISSUED_AT, new Date());
+        return generateToken(claims);
+    }
 
     /**
      * 判断token是否可以被刷新

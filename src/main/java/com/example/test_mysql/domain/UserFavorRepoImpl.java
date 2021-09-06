@@ -5,6 +5,8 @@
  */
 package com.example.test_mysql.domain;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -26,6 +28,9 @@ public class UserFavorRepoImpl {
 	@PersistenceContext
 	private EntityManager entityManager;
 
+	// 日期形式：年月日 时分秒
+	private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+	
 	@Transactional
 	@Modifying
 	/** 查找用户的收藏信息 */
@@ -114,23 +119,31 @@ public class UserFavorRepoImpl {
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 		}
+		// 习题
 		else {
 			int exID = Integer.parseInt((String) params.get(1));
 			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor"
 				+ " WHERE id = "
 				+ id);
 			List<String> resList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
+			String newEntry = new StringBuilder("{ id:" 
+					+ exID 
+					+ ", date: \'"				
+					+ sdf.format(new Date())
+					+ "\'}").toString();
 			if (resList.isEmpty()) {
 				sqlBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
 					+ id
 					+ ",\'[]\', \'["
-					+ exID
+					+ newEntry
 					+ "]\')");
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			}
 			else {
 				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
-				if(entitiesArray.contains(exID)) return;
+				for (int i = 0; i < entitiesArray.size(); ++i) {
+					if ((int) entitiesArray.getJSONObject(i).get("id") == exID) return;
+				}
 				entitiesArray.add(0, exID);
 				sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises"
 						+ "=\'"
