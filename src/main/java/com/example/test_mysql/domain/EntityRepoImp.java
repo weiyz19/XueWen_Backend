@@ -256,8 +256,7 @@ public class EntityRepoImp{
 			JSONObject entryJsonObject = new JSONObject();
 			entryJsonObject.put("name", entityName);
 			entryJsonObject.put("sbj", course);
-			entryJsonObject.put("content", StringEscapeUtils.unescapeJava(
-					entityManager.createNativeQuery(contentString.toString()).getSingleResult().toString()));
+			entryJsonObject.put("content", JSONArray.fromObject(entityManager.createNativeQuery(contentString.toString()).getSingleResult()));
 			entyJsonArray.add(entryJsonObject);
 		}
 		return entyJsonArray;

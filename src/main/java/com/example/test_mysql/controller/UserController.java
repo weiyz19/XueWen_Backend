@@ -95,7 +95,7 @@ public class UserController {
 			JSONObject info = new JSONObject();
 			info.put("username", user.getUsername());
 			info.put("email", user.getEmail());
-			info.put("phone", user.getEmail());
+			info.put("phone", user.getPhone());
 			response.put("data", info);
 			response.put("msg", "token刷新成功!");
 			response.put("code", "0");
