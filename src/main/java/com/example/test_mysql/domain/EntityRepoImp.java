@@ -213,12 +213,12 @@ public class EntityRepoImp{
 			for (int k = 0; k < ex.size(); ++k) {
 				// 拿到它的习题的关联知识点
 				int exID = (int) ex.getJSONObject(k).get("id");
-				favorString = new StringBuilder("SELECT name FROM exercises_to_entity WHERE id=" + exID);
+				favorString = new StringBuilder("SELECT name FROM exercise_to_entity WHERE id=" + exID);
 				JSONArray relatedEnt = JSONArray.fromObject(entityManager.createNativeQuery(favorString.toString()).getSingleResult());
 				// 检查每个关联的知识点
 				for (int j = 0; j < relatedEnt.size(); j++) {
 					String name = relatedEnt.getString(j);
-					StringBuilder checkString = new StringBuilder("SELECT * FROM " + courses[Integer.parseInt(course)] + " WHERE name=" + name);
+					StringBuilder checkString = new StringBuilder("SELECT * FROM " + courses[Integer.parseInt(course)] + " WHERE name=\'" + name + "\'");
 					if(!entityManager.createNativeQuery(checkString.toString()).getResultList().isEmpty()) {
 						entyArray.add(name);
 					}

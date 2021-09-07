@@ -73,9 +73,8 @@ public class UserFavorRepoImpl {
 			JSONArray idArray = JSONArray.fromObject(res.get(0).getExercises());
 			for (int i = 0; i < idArray.size(); ++i) {
 				// 遍历所有习题
-				sqlString = new StringBuilder("SELECT name FROM exercise_to_entity WHERE id = " + idArray.get(i));
-				JSONObject exerObject = new JSONObject();
-				exerObject.put("id", idArray.get(i));
+				sqlString = new StringBuilder("SELECT name FROM exercise_to_entity WHERE id = " + idArray.getJSONObject(i).get("id"));
+				JSONObject exerObject = idArray.getJSONObject(i);
 				exerObject.put("entities", JSONArray.fromObject(entityManager.createNativeQuery(sqlString.toString()).getSingleResult()));
 				exerArray.add(exerObject);
 			}

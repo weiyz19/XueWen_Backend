@@ -32,7 +32,7 @@ import net.sf.json.JSONObject;
 
 
 @Controller // This means that this class is a Controller
-@RequestMapping(path="/exercise") // This means URL's start with /demo (after Application path)
+@RequestMapping(path="/exercise")
 public class ExerciseController {
 	@Autowired
 	private ExerciseService exerciseService;
@@ -68,7 +68,7 @@ public class ExerciseController {
 	
 	
 	/** 接收历史记录的内容包括：习题ID，是否正确，选择的选项 */
-	@GetMapping(path="/log", produces = "application/json;charset=UTF-8")
+	@PostMapping(path="/log", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject getEntityDetail (
 			HttpServletRequest request) {
     // @ResponseBody means the returned String is the response, not a view name

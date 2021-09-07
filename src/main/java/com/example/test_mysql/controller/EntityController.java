@@ -92,7 +92,7 @@ public class EntityController {
 	}
 	
 	/** Entities only */
-	@GetMapping(path="/history", produces = "application/json;charset=UTF-8")
+	@PostMapping(path="/history", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject getUserHistory(HttpServletRequest request) {
 		JSONObject resJsonObject = new JSONObject();
 		resJsonObject.put("code", "0");
@@ -103,7 +103,7 @@ public class EntityController {
 	}
 	
 	/** Entities only  指定学科 */
-	@GetMapping(path="/recommend", produces = "application/json;charset=UTF-8")
+	@PostMapping(path="/recommend", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject getUserUnique(HttpServletRequest request) {
 		JSONObject resJsonObject = new JSONObject();
 		resJsonObject.put("code", "0");

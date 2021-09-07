@@ -29,7 +29,7 @@ import com.example.test_mysql.service.UserService;
 import net.sf.json.JSONObject;
 
 @Controller // This means that this class is a Controller
-@RequestMapping(path="/user") // This means URL's start with /demo (after Application path)
+@RequestMapping(path="/user") // This means URL's start with /user
 public class UserController {
 	@Autowired
 	private UserRepo userRepository;
@@ -73,7 +73,7 @@ public class UserController {
 			response.put("token", "");
 			return response;
 		}
-		response.put("data", JSONObject.fromObject(new StringBuilder("{email:\'").append(infoList.get(0))
+		response.put("data", JSONObject.fromObject(new StringBuilder("{username:\'").append(username).append("\',email:\'").append(infoList.get(0))
 				.append("\', phone:\'").append(infoList.get(1)).append("\'}").toString()));
 		response.put("msg", "登录成功!");
 		response.put("code", "0");
@@ -93,6 +93,7 @@ public class UserController {
 			response.put("token", "");
 		} else {
 			JSONObject info = new JSONObject();
+			info.put("username", user.getUsername());
 			info.put("email", user.getEmail());
 			info.put("phone", user.getEmail());
 			response.put("data", info);
@@ -103,7 +104,7 @@ public class UserController {
 		return response;
 	}
   
-	@GetMapping(path="/favor/get", produces = "application/json;charset=UTF-8")
+	@PostMapping(path="/favor/get", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject getUserFavor(HttpServletRequest request) {
 		JSONObject resJsonObject = new JSONObject();
 		resJsonObject.put("code", "0");
@@ -143,7 +144,7 @@ public class UserController {
 		return resJsonObject;
 	}
 	
-	@GetMapping(path="/overall", produces = "application/json;charset=UTF-8")
+	@PostMapping(path="/overall", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject getUserHistory(HttpServletRequest request) {
 		JSONObject resJsonObject = new JSONObject();
 		resJsonObject.put("code", "0");

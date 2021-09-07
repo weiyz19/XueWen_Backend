@@ -5,9 +5,12 @@
  */
 package com.example.test_mysql.config;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.springframework.http.*;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 public class HttpUtil {
@@ -17,17 +20,17 @@ public class HttpUtil {
      * @param params   发送的参数
      * @return  JsonData
      */
-	private static final String ID = "613794e1-c19e-4e9d-882d-6362d15c9174";
+	private static final String ID = "9cad8146-b17e-4dfc-807a-06bd8e431bdd";
 	
-    public static String sendPostRequest(String url, Map<String, String> params){
+    public static String sendPostRequest(String url, MultiValueMap<String, String> params){
         RestTemplate client = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         HttpMethod method = HttpMethod.POST;
         // 以表单的方式提交
-        params.put("id", ID);
+        params.put("id", new ArrayList<String>(Arrays.asList(ID)));
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         //将请求头部和参数合成一个请求
-        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(params, headers);
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
         //执行HTTP请求，将返回的结构使用String 类格式化（可设置为对应返回值格式的类）
         ResponseEntity<String> response = client.exchange(url, method, requestEntity, String.class);
         return response.getBody();
