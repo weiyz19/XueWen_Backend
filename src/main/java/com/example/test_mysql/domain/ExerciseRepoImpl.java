@@ -195,8 +195,14 @@ public class ExerciseRepoImpl {
 					checks.set(idx, 1);
 					exercise.replace("check", checks);
 					favorExercise.set(j, exercise);
-					favorBuilder = new StringBuilder("UPDATE user_favor set exercises ="+ favorExercise.toString() + " WHERE id = " + userID);
-					entityManager.createNativeQuery(favorBuilder.toString()).executeUpdate();
+					favorBuilder = new StringBuilder("UPDATE user_favor set exercises =\'"+ favorExercise.toString() + "\' WHERE id = " + userID);
+					try {
+						entityManager.createNativeQuery(favorBuilder.toString()).executeUpdate();
+					}
+					catch (Exception e) {
+						logger.info("update history failed");
+					}
+					break;
 				}
 			}
 		}
