@@ -43,6 +43,28 @@ public class AuthService {
         return 0;
     }
 
+	public int editProfile(List<String> params) {
+		int userID = Integer.parseInt(params.get(0));
+		MyUser oldUser =  userRepository.findById(userID).get();
+		try {
+			authenticate(oldUser.getUsername(), params.get(2));
+		} catch (Exception e) {		// 密码错误
+			return 1;
+		}
+		MyUser tmpMyUser = userRepository.findByUsername(params.get(1));
+		if (tmpMyUser != null && tmpMyUser.getId() != userID)
+			return 2;
+		userRepository.delete(oldUser);
+		MyUser newUser = new MyUser();
+		newUser.setId(userID);
+		newUser.setUsername(params.get(1));
+		newUser.setHashedpassword(passwordEncoder.encode(params.get(3)));
+		newUser.setPhone(params.get(4));
+		newUser.setEmail(params.get(5));
+        userRepository.save(newUser);
+        return 0;
+    }
+	
     public List<String> login(String username, String password) throws AuthenticationException {
     	try {
     		authenticate(username, password);

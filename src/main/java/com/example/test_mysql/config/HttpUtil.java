@@ -22,7 +22,7 @@ public class HttpUtil {
      * @param params   发送的参数
      * @return  JsonData
      */
-	private static final String ID = "871faa42-262e-4506-b99a-3273e1e5dba6";
+	private static final String ID = "67e4dc0f-b870-4c9a-a9d1-d6b9877cd61b";
 	
 	public static String getuserID(HttpServletRequest request) {
 		return request.getParameterValues("userID")[0];

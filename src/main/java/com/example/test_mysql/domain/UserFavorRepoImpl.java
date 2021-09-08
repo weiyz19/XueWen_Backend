@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -146,57 +148,42 @@ public class UserFavorRepoImpl {
 	@Modifying
 	/** 删除用户的收藏信息 */
 	public void cancelFavorIn(List<Object> params) {
-		// 	0:实体  实体名称 userid
+		// 	0:实体  实体名称  userid   sbj
 		//  1:习题  习题id   userid
 		int id = (int) params.get(2);
 		int type = (int) params.get(0);
 		// 实体
 		if (type == 0) {
-			StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_favor"
-				+ " WHERE id = "
-				+ id);
-			List<String> resList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
-			if (resList.isEmpty()) return;
-			else {
-				String newEntry = new StringBuilder("{ name: \'" 
-						+ (String) params.get(1) 
-						+ "\', sbj: \'"				
-						+ (String) params.get(3)
-						+ "\'}").toString();
-				JSONObject sg = JSONObject.fromObject(newEntry);
-				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
-				if(!entitiesArray.contains(sg)) return;
-				entitiesArray.remove(sg);
-				sqlBuilder = new StringBuilder("UPDATE user_favor SET entities"
-						+ "=\'"
-						+ entitiesArray.toString()
-						+ "\' WHERE id = " 
-						+ id);
-				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
-			}
+			StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_favor WHERE id = "+id);
+			JSONArray resList = JSONArray.fromObject(entityManager.createNativeQuery(sqlBuilder.toString()).getSingleResult());
+			String newEntry = new StringBuilder(
+					"{ name: \'" + (String) params.get(1) + "\', sbj: \'" + (String) params.get(3) + "\'}").toString();
+			JSONObject sg = JSONObject.fromObject(newEntry);
+			if (!resList.contains(sg)) return;
+			resList.remove(sg);
+			sqlBuilder = new StringBuilder("UPDATE user_favor SET entities" + "=\'" 
+					+ resList.toString() + "\' WHERE id = " + id);
+			entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 		}
 		else {
 			int exID = Integer.parseInt((String) params.get(1));
-			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor"
-				+ " WHERE id = "
-				+ id);
-			List<String> resList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
-			if (resList.isEmpty()) return;
-			else {
-				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
-				if(!entitiesArray.contains(exID)) return;
-				for(int i = 0; i < entitiesArray.size(); ++i) {
-					if (entitiesArray.get(i).equals(exID)) {
-						entitiesArray.remove(i); break;
-					}
+			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor WHERE id = "+id);
+			JSONArray resList = JSONArray.fromObject(entityManager.createNativeQuery(sqlBuilder.toString()).getSingleResult());
+			String pattern = "[^0-9]" + exID + "[^0-9]";
+		    // 创建 Pattern 对象
+		    Pattern r = Pattern.compile(pattern);
+			for(int i = 0; i < resList.size(); ++i) {
+				Matcher m = r.matcher(resList.getString(i));
+				if (m.find()) {
+					resList.remove(i); 
+					break;
 				}
-				sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises"
-						+ "=\'"
-						+ entitiesArray.toString()
+			}
+			sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises=\'"
+						+ resList.toString()
 						+ "\' WHERE id=" 
 						+ id);
-				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
-			}
+			entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 		}
 	}
 	

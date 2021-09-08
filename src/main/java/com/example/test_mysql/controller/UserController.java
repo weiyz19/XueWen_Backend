@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.example.test_mysql.config.HttpUtil;
 import com.example.test_mysql.config.JwtTokenUtil;
 import com.example.test_mysql.domain.AuthenticationException;
 import com.example.test_mysql.domain.JsonResult;
@@ -82,6 +83,33 @@ public class UserController {
 		return response;
 	}
 
+	@PostMapping(path="/edit", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject userProfile(HttpServletRequest request) throws AuthenticationException{
+		JSONObject response = new JSONObject();
+		List<String> params = new LinkedList<>();
+		params.add(HttpUtil.getuserID(request));
+		params.add(request.getParameter("username"));
+		params.add(request.getParameter("password"));
+		params.add(request.getParameter("newpassword"));
+		params.add(request.getParameter("phone"));
+		params.add(request.getParameter("email"));
+		int status = authService.editProfile(params);
+		response.put("data", "");
+		response.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		if (status == 0) {
+			response.put("msg", "修改成功");
+			response.put("code", "0");
+		}
+		else if (status == 1) {
+			response.put("msg", "密码错误!");
+			response.put("code", "1");
+		} else{
+			response.put("msg", "用户名已被使用");
+			response.put("code", "2");
+		}
+		return response;
+	}
+	
 	@PostMapping(path="/refresh", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject refreshAndGetToken(HttpServletRequest request) {
 		String refreshedToken = authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER));

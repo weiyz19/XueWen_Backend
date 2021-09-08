@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
@@ -95,9 +96,11 @@ public class ExerciseRepoImpl {
 		    exerObject.put("idx", -1);
 			try {
 					String exercises = entityManager.createNativeQuery(getStarredBuilder.toString()).getSingleResult().toString();
-					String pattern = "^[0-9]" + Integer.toString(id)+ "^[0-9]";
-					// 如果包括
-					if(Pattern.matches(Integer.toString(id), exercises))
+					String pattern = "[^0-9]" + Integer.toString(id)+ "[^0-9]";
+				    // 创建 Pattern 对象
+				    Pattern r = Pattern.compile(pattern);
+				    Matcher m = r.matcher(exercises);
+					if(m.find())
 						exerObject.put("isStarred", "1");
 					else exerObject.put("isStarred", "0");
 			} catch (Exception e) {
@@ -253,8 +256,9 @@ public class ExerciseRepoImpl {
 				int idx;
 				try {
 					idx = timeNode.floorEntry(diff).getValue();
-				} catch (Exception e) { continue; }
-				
+				} catch (Exception e) {
+					continue;
+				}
 				if (exercise.getJSONArray("check").getInt(idx) == 0) {
 					StringBuilder favorBuilder = new StringBuilder(
 							"SELECT * FROM exercises WHERE id=" + exercise.getInt("id"));
