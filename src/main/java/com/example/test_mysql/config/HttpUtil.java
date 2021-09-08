@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.http.*;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -20,7 +22,11 @@ public class HttpUtil {
      * @param params   发送的参数
      * @return  JsonData
      */
-	private static final String ID = "9cad8146-b17e-4dfc-807a-06bd8e431bdd";
+	private static final String ID = "871faa42-262e-4506-b99a-3273e1e5dba6";
+	
+	public static String getuserID(HttpServletRequest request) {
+		return request.getParameterValues("userID")[0];
+	}
 	
     public static String sendPostRequest(String url, MultiValueMap<String, String> params){
         RestTemplate client = new RestTemplate();

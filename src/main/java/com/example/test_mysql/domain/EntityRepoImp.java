@@ -11,14 +11,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.hibernate.query.criteria.internal.expression.function.AggregationFunction.COUNT;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,9 +39,9 @@ public class EntityRepoImp{
 	
 	@SuppressWarnings("unchecked")
 	public JSONArray findAllByNameIn(List<String> params) {
-		Map<String, String> entityMap = new HashedMap();
 		JSONArray entityList = new JSONArray();
 		for (int i = 0; i < 9; i++) {
+			JSONObject entity = new JSONObject();
 			StringBuilder sqlString = new StringBuilder("SELECT name, content FROM " 
 					+ courses[i] 
 					+ " WHERE name LIKE \'%" 
@@ -52,10 +51,12 @@ public class EntityRepoImp{
 			try {
 				for (Object myEntity : dataQuery.getResultList()) {
 					Object[] row = (Object[]) myEntity;
-					entityMap.put("name", (String) row[0]);
-					entityMap.put("content", (String) row[1]);
-					entityMap.put("sbj", Integer.toString(i));
-					entityList.add(JSONObject.fromObject(entityMap));
+					entity.put("name", (String) row[0]);
+					entity.put("content", (String) row[1]);
+					if (entity.getString("content").equals("[]"))
+						entity.replace("content", "[\"请点击以查看详情\"]");
+					entity.put("sbj", Integer.toString(i));
+					entityList.add(entity);
 				}
 			} catch (Exception e) {}
 		}
@@ -75,16 +76,19 @@ public class EntityRepoImp{
 		List<Object> resList; 
 		JSONArray entityList = new JSONArray();
 		try {
+			JSONObject entity = new JSONObject();
 			resList = dataQuery.getResultList();
 			if (resList.isEmpty()) entityList = null;
 			else {
 				for (Object myEntity : resList) {
 					Object[] row = (Object[]) myEntity;
 					Map<String, String> entityMap = new HashedMap();
-					entityMap.put("name", (String) row[0]);
-					entityMap.put("content", (String) row[1]);
-					entityMap.put("sbj", Integer.toString(course));
-					entityList.add(JSONObject.fromObject(entityMap));
+					entity.put("name", (String) row[0]);
+					entity.put("content", (String) row[1]);
+					if (entity.getString("content").equals("[]"))
+						entity.replace("content", "[\"请点击以查看详情\"]");
+					entity.put("sbj", Integer.toString(course));
+					entityList.add(entity);
 				}
 			}
 		} catch (Exception e) {
@@ -92,21 +96,22 @@ public class EntityRepoImp{
 		}
 		return entityList;
 	}
+	
 	/**
 	 * 得到一个实体的详情以及收藏情况
 	 * params 学科标号/实体名称
 	 * return 查找到的习题详情信息
 	 * */
-	public String findDetailByNameIn(List<Object> params) {
+	public JSONObject findDetailByNameIn(List<Object> params) {
 		StringBuilder sqlString = new StringBuilder("SELECT * FROM " 
 				+ courses[(int)params.get(0)] 
 				+ " WHERE name = \'" 
 				+ params.get(1) 
 				+ "\'");
 		Query dataQuery = entityManager.createNativeQuery(sqlString.toString(), MyEntity.class);
-		MyEntity res; 
+		JSONObject entity;
 		try {
-			res = (MyEntity) dataQuery.getSingleResult();
+			entity = JSONObject.fromObject(((MyEntity) dataQuery.getSingleResult()).toJSON());
 		} catch (Exception e) {
 			return null;
 		}
@@ -115,14 +120,14 @@ public class EntityRepoImp{
 				JSONObject entry = new JSONObject();
 				entry.put("sbj", params.get(0));
 				entry.put("name", params.get(1));
-				if (JSONArray.fromObject(entityManager.createNativeQuery(getStarredBuilder.toString()).getSingleResult())
-						.contains(entry)) 
-					return res.toJSON("1");
-				else return res.toJSON("0");
-		} catch (Exception e) {
-				// 收藏里找不到，
-			return res.toJSON("0");
+				if (JSONArray.fromObject(entityManager.createNativeQuery(
+					getStarredBuilder.toString()).getSingleResult()).contains(entry)) 
+					entity.put("isStarred", "1");
+				else entity.put("isStarred", "0");
+		} catch (Exception e) { // 收藏里找不到，
+			entity.put("isStarred", "0");
 		}
+		return entity;
 	}
 	
 	@Transactional
@@ -133,16 +138,8 @@ public class EntityRepoImp{
 				+ " WHERE id = "
 				+ params.get(0));
 		Query dataQuery = entityManager.createNativeQuery(sqlString.toString());
-		List<String> res = dataQuery.getResultList();
-		JSONArray entyArray = new JSONArray();
-		if (res.isEmpty()) {
-			StringBuilder insertBuilder = new StringBuilder("INSERT INTO user_history VALUES("
-					+ params.get(0)
-					+ ",\'[]\', \'[0,0,0,0,0,0,0,0,0]\', \'[]\')");
-			entityManager.createNativeQuery(insertBuilder.toString()).executeUpdate();
-		}
-		else entyArray = JSONArray.fromObject(res.get(0));
-		return entyArray;
+		String res = dataQuery.getSingleResult().toString();
+		return JSONArray.fromObject(res);
 	}
 	
 	@Transactional
@@ -160,7 +157,7 @@ public class EntityRepoImp{
 		// 同时只允许一个方法读写
 		synchronized (entityManager) {
 			if (entList.isEmpty()) {
-				sqlBuilder = new StringBuilder("INSERT INTO user_history VALUES(" + id + ",\'[" + newEntry + "]\', \'[0,0,0,0,0,0,0,0,0]\', \'[]\')");
+				sqlBuilder = new StringBuilder("INSERT INTO user_history VALUES(" + id + ",\'[" + newEntry + "]\', \'[0,0,0,0,0,0,0,0,0]\', \'[]\', \'[]\')");
 				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 			} else {
 				JSONArray entitiesArray = JSONArray.fromObject(entList.get(0));
@@ -181,6 +178,11 @@ public class EntityRepoImp{
 		}
 	}
 	
+	/**
+	 * 按照优先级取出推荐实体的ID
+	 * 来源可以是历史记录或者收藏
+	 * 优先从收藏中取
+	 * */
 	private List<String> getRelatedIn(List<String> params) {
 		int userID = Integer.parseInt(params.get(0));
 		String course = params.get(1);
@@ -257,6 +259,8 @@ public class EntityRepoImp{
 			entryJsonObject.put("name", entityName);
 			entryJsonObject.put("sbj", course);
 			entryJsonObject.put("content", JSONArray.fromObject(entityManager.createNativeQuery(contentString.toString()).getSingleResult()));
+			if (entryJsonObject.getString("content").equals("[]")) 
+				entryJsonObject.replace("content", "[\"请点击以查看详情\"]");
 			entyJsonArray.add(entryJsonObject);
 		}
 		return entyJsonArray;

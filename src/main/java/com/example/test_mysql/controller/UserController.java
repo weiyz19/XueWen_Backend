@@ -54,6 +54,7 @@ public class UserController {
 		n.setHashedpassword(password);
 		int status = authService.register(n);
 		if (status == 0) {
+			userService.createEntry(username);
 			return new JsonResult<>("", "注册成功", "0");  
 		}
 		else {

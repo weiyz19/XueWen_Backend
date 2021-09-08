@@ -17,6 +17,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,53 +32,59 @@ public class UserFavorRepoImpl {
 	@PersistenceContext
 	private EntityManager entityManager;
 
-	// 日期形式：年月日 时分秒
+	// 日期形式：年月日
 	private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 	private final long timerange = 604800000;
 	private final long oneday = 86400000;
+	
+	@Async("asyncServiceExecutor")
+	public void createEntry(List<Integer> params) {
+		StringBuilder favorString = new StringBuilder("INSERT INTO user_favor VALUES("
+				+ params.get(0)
+				+ ",\'[]\', \'[]\')");
+		entityManager.createNativeQuery(favorString.toString()).executeUpdate();
+		StringBuilder historyString = new StringBuilder("INSERT INTO user_history VALUES("
+				+ params.get(0)
+				+ ",\'[]\' ,\'[0,0,0,0,0,0,0,0,0]\' ,\'[]\', \'[]\')");
+		entityManager.createNativeQuery(historyString.toString()).executeUpdate();
+	}
+	
 	@Transactional
 	@Modifying
-	/** 查找用户的收藏信息 */
+	/** 查找用户的收藏实体 */
 	public JSONArray findEntityByIdIn(List<Integer> params) {
 		StringBuilder sqlString = new StringBuilder("SELECT * FROM user_favor WHERE id = "
 				+ params.get(0));
 		Query dataQuery = entityManager.createNativeQuery(sqlString.toString(), UserFavor.class);
-		List<UserFavor> res = dataQuery.getResultList();
+		UserFavor res = (UserFavor) dataQuery.getSingleResult();
 		JSONArray entyArray = new JSONArray();
-		if (res.isEmpty()) {
-			StringBuilder insertBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
-					+ params.get(0)
-					+ ",\'[]\', \'[]\')");
-			entityManager.createNativeQuery(insertBuilder.toString()).executeUpdate();
-		}
-		else entyArray = JSONArray.fromObject(res.get(0).getEntities());
+		entyArray = JSONArray.fromObject(res.getEntities());
 		return entyArray;
 	}
 	
 	@Transactional
 	@Modifying
-	/** 查找用户的收藏信息 */
+	/** 查找用户的收藏习题 */
 	public JSONArray findExerciseByIdIn(List<Integer> params) {
-		StringBuilder sqlString = new StringBuilder("SELECT * FROM user_favor WHERE id = "
-				+ params.get(0));
+		StringBuilder sqlString = new StringBuilder("SELECT * FROM user_favor WHERE id = "+ params.get(0));
 		Query dataQuery = entityManager.createNativeQuery(sqlString.toString(), UserFavor.class);
-		List<UserFavor> res = dataQuery.getResultList();
+		UserFavor res = (UserFavor) dataQuery.getSingleResult();
 		JSONArray exerArray = new JSONArray();
-		if (res.isEmpty()) {
-			StringBuilder insertBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
-					+ params.get(0)
-					+ ",\'[]\', \'[]\')");
-			entityManager.createNativeQuery(insertBuilder.toString()).executeUpdate();
-		}
-		else { 
-			JSONArray idArray = JSONArray.fromObject(res.get(0).getExercises());
-			for (int i = 0; i < idArray.size(); ++i) {
-				// 遍历所有习题
-				sqlString = new StringBuilder("SELECT name FROM exercise_to_entity WHERE id = " + idArray.getJSONObject(i).get("id"));
-				JSONObject exerObject = idArray.getJSONObject(i);
-				exerObject.put("entities", JSONArray.fromObject(entityManager.createNativeQuery(sqlString.toString()).getSingleResult()));
+		JSONArray idArray = JSONArray.fromObject(res.getExercises());
+		for (int i = 0; i < idArray.size(); ++i) {
+			int exID = idArray.getJSONObject(i).getInt("id");
+			StringBuilder exBuilder = new StringBuilder("SELECT * FROM exercises WHERE id=" + exID);
+			StringBuilder getNameString = new StringBuilder("SELECT name FROM exercise_to_entity WHERE id=" + exID);
+			MyExercise sgExercise = null;
+			try {
+				// 拿出其中一道
+				sgExercise = (MyExercise) entityManager
+						.createNativeQuery(exBuilder.toString(), MyExercise.class).getSingleResult();
+				JSONObject exerObject = JSONObject.fromObject(sgExercise.toJSON());
+				exerObject.put("entity", JSONArray.fromObject(entityManager.createNativeQuery(getNameString.toString()).getSingleResult().toString()));
+				exerObject.put("idx", -1);
 				exerArray.add(exerObject);
-			}
+			} catch (Exception e) {}
 		}
 		return exerArray;
 	}
@@ -97,64 +104,41 @@ public class UserFavorRepoImpl {
 				+ "\', sbj: \'"				
 				+ (String) params.get(3)
 				+ "\'}").toString();
-			StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_favor"
-				+ " WHERE id = "
-				+ id);
-			List<String> entList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
-			if (entList.isEmpty()) {
-				sqlBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
-					+ id
-					+ ",\'["
-					+ newEntry
-					+ "]\', \'[]\')");
-				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
-			}
-			else {
-				JSONArray entitiesArray = JSONArray.fromObject(entList.get(0));
-				JSONObject sg = JSONObject.fromObject(newEntry);
-				if(entitiesArray.contains(sg)) return;
-				entitiesArray.add(0, sg);
-				sqlBuilder = new StringBuilder("UPDATE user_favor SET entities"
-						+ "=\'"
-						+ entitiesArray.toString()
-						+ "\' WHERE id = " 
-						+ id);
-				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
-			}
+			StringBuilder sqlBuilder = new StringBuilder("SELECT entities FROM user_favor WHERE id=" + id);
+			String entList = entityManager.createNativeQuery(sqlBuilder.toString()).getSingleResult().toString();
+			JSONArray entitiesArray = JSONArray.fromObject(entList);
+			JSONObject sg = JSONObject.fromObject(newEntry);
+			if(entitiesArray.contains(sg)) return;
+			entitiesArray.add(0, sg);
+			sqlBuilder = new StringBuilder("UPDATE user_favor SET entities=\'"
+					+ entitiesArray.toString()
+					+ "\' WHERE id = " 
+					+ id);
+			entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 		}
 		// 习题
 		else {
 			int exID = Integer.parseInt((String) params.get(1));
-			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor"
-				+ " WHERE id = "
+			StringBuilder sqlBuilder = new StringBuilder("SELECT exercises FROM user_favor WHERE id = "
 				+ id);
-			List<String> resList = entityManager.createNativeQuery(sqlBuilder.toString()).getResultList();
+			String resList = entityManager.createNativeQuery(sqlBuilder.toString()).getSingleResult().toString();
+			JSONArray entitiesArray = JSONArray.fromObject(resList);
+			for (int i = 0; i < entitiesArray.size(); ++i) {
+				if ((int) entitiesArray.getJSONObject(i).get("id") == exID) return;
+			}
 			String newEntry = new StringBuilder("{ id:" 
 					+ exID 
 					+ ", date: \'"				
 					+ sdf.format(new Date())
-					+ "\'}").toString();
-			if (resList.isEmpty()) {
-				sqlBuilder = new StringBuilder("INSERT INTO user_favor VALUES("
-					+ id
-					+ ",\'[]\', \'["
-					+ newEntry
-					+ "]\')");
-				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
-			}
-			else {
-				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
-				for (int i = 0; i < entitiesArray.size(); ++i) {
-					if ((int) entitiesArray.getJSONObject(i).get("id") == exID) return;
-				}
-				entitiesArray.add(0, newEntry);
-				sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises"
-						+ "=\'"
-						+ entitiesArray.toString()
-						+ "\' WHERE id=" 
-						+ id);
-				entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
-			}
+					// used for EbbingHause check
+					+ "\', check:[0, 0, 0, 0, 0]}").toString();
+			entitiesArray.add(0, newEntry);
+			sqlBuilder = new StringBuilder("UPDATE user_favor SET exercises"
+					+ "=\'"
+					+ entitiesArray.toString()
+					+ "\' WHERE id=" 
+					+ id);
+			entityManager.createNativeQuery(sqlBuilder.toString()).executeUpdate();
 		}
 	}
 	
@@ -200,7 +184,6 @@ public class UserFavorRepoImpl {
 			if (resList.isEmpty()) return;
 			else {
 				JSONArray entitiesArray = JSONArray.fromObject(resList.get(0));
-				// TODO: 测试这玩意能用不
 				if(!entitiesArray.contains(exID)) return;
 				for(int i = 0; i < entitiesArray.size(); ++i) {
 					if (entitiesArray.get(i).equals(exID)) {
@@ -225,26 +208,21 @@ public class UserFavorRepoImpl {
 				+ params.get(0));
 		List<Object> res = entityManager.createNativeQuery(sqlString.toString()).getResultList();
 		JSONObject userInfo = new JSONObject();
-		if (res.isEmpty()) {
-			userInfo.put("entity", JSONArray.fromObject(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0)));
-			userInfo.put("exercise", JSONArray.fromObject(Arrays.asList(0, 0, 0, 0, 0, 0, 0)));
+		long time = sdf.parse(sdf.format(new Date())).getTime();
+		JSONArray logJsonArray = JSONArray.fromObject(res.get(0));
+		userInfo.put("entity", logJsonArray.getJSONArray(1));
+		JSONArray exList = logJsonArray.getJSONArray(0);
+		JSONArray dateList = JSONArray.fromObject(Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+		int minNum = 7;
+		if (exList.size() < 7)
+			minNum = exList.size();
+		for (int i = 0; (i < exList.size() && i < 7); i++) {
+			JSONObject ex = JSONObject.fromObject(exList.get(i));
+			long diff = time - sdf.parse(ex.getString("date")).getTime();
+			if (diff < timerange)
+				dateList.set((int) (diff / oneday), ex.get("count"));
 		}
-		else {
-			long time = sdf.parse(sdf.format(new Date())).getTime();
-			JSONArray logJsonArray = JSONArray.fromObject(res.get(0));
-			userInfo.put("entity", logJsonArray.getJSONArray(1));
-			JSONArray exList = logJsonArray.getJSONArray(0);
-			JSONArray dateList = JSONArray.fromObject(Arrays.asList(0, 0, 0, 0, 0, 0, 0));
-			int minNum = 7;
-			if (exList.size() < 7) minNum = exList.size();
-			for (int i = 0; (i < exList.size() && i < 7); i++) {
-				JSONObject ex = JSONObject.fromObject(exList.get(i));
-				long diff = time - sdf.parse(ex.getString("date")).getTime();
-				if (diff < timerange)
-					dateList.set((int) (diff / oneday), ex.get("count"));
-			}
-			userInfo.put("exercise", dateList);
-		}
+		userInfo.put("exercise", dateList);
 		return userInfo;
 	}
 	

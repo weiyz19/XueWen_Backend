@@ -23,6 +23,8 @@ public class MyExercise {
   
 	private String options;
 	
+	private String sbj;
+	
 	public int getId() {
 		return id;
 	}
@@ -47,14 +49,19 @@ public class MyExercise {
 	public void setOptions(String options) {
 		this.options = options;
 	}
+	public String getSbj() {
+		return sbj;
+	}
 	
-	public String toJSON(String isStarred, String names) {
+	public void setSbj(String sbj) {
+		this.sbj = sbj;
+	}
+	public String toJSON() {
 		return new StringBuilder("{" +
-				"answer:\'" + StringEscapeUtils.unescapeJava(answer) +
+				"id:" + id +
+				", answer:\'" + StringEscapeUtils.unescapeJava(answer) +
 	            "\',content:\'" + StringEscapeUtils.unescapeJava(content) +
 	            "\',options:" + StringEscapeUtils.unescapeJava(options) +
-	            ",isStarred:\'" + isStarred +
-	            "\',entity:" + StringEscapeUtils.unescapeJava(names) +
 	            "}").toString();
 	}
 }

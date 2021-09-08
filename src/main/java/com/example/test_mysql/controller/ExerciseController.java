@@ -41,29 +41,73 @@ public class ExerciseController {
 	
 	static final String EDUKG_EXERCISE = "http://open.edukg.cn/opedukg/api/typeOpen/open/questionListByUriName";
 	
-	
-	
 	/** 拿到一个实体的相关习题 */
 	@PostMapping(path="/get", produces = "application/json;charset=UTF-8")
 	public @ResponseBody JSONObject findEntity (
 			HttpServletRequest request) {
     // @ResponseBody means the returned String is the response, not a view name
 		String name = request.getParameter("name");
-		String userID = request.getParameterValues("userID")[0];
-		JSONArray exerciseList = exerciseService.findExercises(name, userID);
+		String course = request.getParameter("course");
+		String userID = HttpUtil.getuserID(request);
+		JSONArray exerciseList = exerciseService.findExercises(name, userID, course);
 		if (exerciseList == null) {
 			Map<String,String> params = new HashMap<>();
 			params.put("uriName", name);
 			JSONObject response = JSONObject.fromObject(HttpUtil.sendGetRequest(EDUKG_EXERCISE, params));
-			exerciseList = exerciseService.updateExercise(name, response.getJSONArray("data"));
+			exerciseList = exerciseService.updateExercise(name, course, response.getJSONArray("data"));
 		}
-		Map<String, String> resMap = new HashMap<>();
-		resMap.put("msg", "找到结果");
-		resMap.put("code", "0");
-		resMap.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
-		JSONObject resjson = JSONObject.fromObject(resMap);
-		resjson.put("data", exerciseList);
-		return resjson;
+		JSONObject resJsonObject = new JSONObject();
+		resJsonObject.put("msg", "找到结果");
+		resJsonObject.put("code", "0");
+		resJsonObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		resJsonObject.put("data", exerciseList);
+		return resJsonObject;
+	}
+	
+	/** 
+	 * 进行指定学科的专项复习
+	 * 采用了艾宾浩斯记忆法
+	 */
+	@PostMapping(path="/review", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject getbyEbbinghaus(
+			HttpServletRequest request) {
+    // @ResponseBody means the returned String is the response, not a view name
+		String userID = HttpUtil.getuserID(request);
+		JSONArray exerciseList = exerciseService.getEbbinghaus(userID, request.getParameter("course"));
+		JSONObject responseObject = new JSONObject();
+		if (exerciseList == null) {
+			responseObject.put("msg", "failed");
+			responseObject.put("code", "1");
+			responseObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+			responseObject.put("data", "");
+		}
+		responseObject.put("msg", "succeed");
+		responseObject.put("code", "0");
+		responseObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		responseObject.put("data", exerciseList);
+		return responseObject;
+	}
+	
+	/** 
+	 * 拿到用户指定学科的推荐习题
+	 */
+	@PostMapping(path="/recommend", produces = "application/json;charset=UTF-8")
+	public @ResponseBody JSONObject getRecommend(
+			HttpServletRequest request) {
+		String userID = HttpUtil.getuserID(request);
+		JSONArray exerciseList = exerciseService.getRecommend(userID, request.getParameter("course"));
+		JSONObject responseObject = new JSONObject();
+		if (exerciseList == null) {
+			responseObject.put("msg", "failed");
+			responseObject.put("code", "1");
+			responseObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+			responseObject.put("data", "");
+		}
+		responseObject.put("msg", "succeed");
+		responseObject.put("code", "0");
+		responseObject.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+		responseObject.put("data", exerciseList);
+		return responseObject;
 	}
 	
 	
@@ -73,7 +117,9 @@ public class ExerciseController {
 			HttpServletRequest request) {
     // @ResponseBody means the returned String is the response, not a view name
 		List<String> params = new LinkedList<>();
-		params.add(request.getParameterValues("userID")[0]);
+		params.add(HttpUtil.getuserID(request));
+		params.add(request.getParameter("id"));
+		params.add(request.getParameter("idx"));
 		exerciseService.updateHistory(params);
 		JSONObject datajson = new JSONObject();
 		datajson.put("msg", "更新成功");

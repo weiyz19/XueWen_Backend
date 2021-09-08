@@ -67,27 +67,25 @@ public class EntityController {
 		int course = Integer.parseInt(request.getParameter("course"));
 		int userID = Integer.parseInt(request.getParameterValues("userID")[0]);
 		String name = request.getParameter("name");
-		String myEntity = entityService.getEntity(course, name, userID);
-		Map<String, String> resMap = new HashMap<>();
-		JSONObject datajson = null;
+		JSONObject myEntity = entityService.getEntity(course, name, userID);
+		JSONObject resjson = new JSONObject();
 		if (myEntity == null) {
-			resMap.put("msg", "没有找到结果");
-			resMap.put("code", "1");
-			resMap.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+			resjson.put("data", "");
+			resjson.put("msg", "没有找到结果");
+			resjson.put("code", "1");
+			resjson.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
 		}
 		else {
-			datajson = JSONObject.fromObject(myEntity);
-			resMap.put("msg", "找到结果");
-			resMap.put("code", "0");
-			resMap.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
+			resjson.put("data", myEntity);
+			resjson.put("msg", "找到结果");
+			resjson.put("code", "0");
+			resjson.put("token", authService.refresh(request.getParameter(JwtTokenUtil.TOKENHEDER)));
 			List<Object> params = new LinkedList<>();
 			params.add(request.getParameter("course"));
 			params.add(name);
 			params.add(Integer.parseInt(request.getParameterValues("userID")[0]));
 			entityService.updateHistory(params);
 		}
-		JSONObject resjson = JSONObject.fromObject(resMap);
-		resjson.put("data", datajson);
 		return resjson;
 	}
 	

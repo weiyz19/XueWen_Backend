@@ -62,7 +62,7 @@ public class MyEntity {
 		this.type = type;
 	}
 
-	public String toJSON(String isStarred) {
+	public String toJSON() {
 		return new StringBuilder("{" +
 			"name:\""+ name + "\"" +
             ",uri:" + StringEscapeUtils.unescapeJava(uri) +
@@ -70,7 +70,6 @@ public class MyEntity {
             ",attributes:" + StringEscapeUtils.unescapeJava(attributes) +
             ",content:" + StringEscapeUtils.unescapeJava(content) +
             ",type:" + StringEscapeUtils.unescapeJava(type) +
-            ",isStarred:\'" + isStarred +
-            "\'}").toString().replace("\n", "\\n");
+            "}").toString().replace("\n", "\\n");
 	}
 }

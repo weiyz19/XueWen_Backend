@@ -16,6 +16,7 @@ import com.example.test_mysql.domain.EntityRepoImp;
 import com.example.test_mysql.domain.MyEntity;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 
 /** courses: 0. 语文 1. 数学 2. 英语 3. 物理 4. 化学 5. 生物 6. 历史 7. 地理 8. 政治 */
@@ -45,7 +46,7 @@ public class EntityService {
 		}
 	}
 
-	public String getEntity(int course, String name, int userID) {
+	public JSONObject getEntity(int course, String name, int userID) {
 		try {
 			List<Object> params = new LinkedList<>();
 			params.add(course);

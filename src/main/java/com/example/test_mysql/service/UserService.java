@@ -60,6 +60,13 @@ public class UserService implements UserDetailsService{
 		return userFavorRepoImpl.findHistoryByIdIn(params);
 	}
 	
+	/** 添加该用户对应的所有条目 */
+	public void createEntry(String username) {
+		List<Integer> params = new LinkedList<>();
+		params.add(userRepository.findByUsername(username).getId());
+		userFavorRepoImpl.createEntry(params);
+	}
+	
 	public boolean updateUserFavor(List<Object> params, int optype){
 		if (optype == 0) {
 			try {
